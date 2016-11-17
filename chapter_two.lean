@@ -3,13 +3,6 @@
   Analysis 1, Third Edition, Tao                                             
 \-------------------------------------------------------------------------------/
 
--- Lean already contains a basic notion of the natural numbers and arithmetic
--- operations. There are minor differences, such as its definition of the 
--- natural numbers being recursive on the second argument. As a result, certain
--- lemmas or theorems may have their argument positions reversed below.
-
-open eq
-
 namespace ch2
 local abbreviation S := nat.succ
 local abbreviation induction_on := @nat.induction_on
@@ -23,15 +16,17 @@ example (n : ℕ) : ℕ := S n
 
 
 -- axiom 2.3 - zero is not the successor of any natural number
-example (n : ℕ) : S n = 0 → false := nat.no_confusion
-
+lemma zero_not_succ (n : ℕ) : S n = 0 ↔ false :=
+begin
+  split, exact nat.no_confusion, intro h; exfalso; assumption
+end
 
 -- axiom 2.4 - the successor function is injective
 theorem succ_inj (a b : ℕ) : S a = S b ↔ a = b := 
 begin
   split,
-    intro; injection a_1; assumption,
-    intro; rewrite a_1
+    intro h, injection h, assumption,
+    intro h; rewrite h
 end
 
 
@@ -84,6 +79,7 @@ induction_on n
             ... = S (m + n) : ih
             ... = m + S n   : add_n_Sm)
 
+-- proposition 2.2.5
 proposition add_assoc {a b c : ℕ} : (a + b) + c = a + (b + c) :=
 induction_on c
   (show (a + b) + 0 = a + (b + 0), from
@@ -97,34 +93,62 @@ induction_on c
         a + b + S c = S (a + b + c)   : add_n_Sm 
                 ... = S (a + (b + c)) : ih)
 
-
+-- proposition 2.2.6
 proposition add_cancel {a b c : ℕ} :  a + b = a + c → b = c :=
-begin
-  induction a with a ih,
-  { intro, rewrite *add_0_n at a, assumption },
-  rewrite *add_Sn_m, rewrite succ_inj, assumption
-end
-
-proposition add_cancel1 {a b c : ℕ} :  a + b = a + c → b = c :=
 induction_on a
   (assume h : 0 + b = 0 + c,
-    show (b = c), from
+    show b = c, from
       calc
         b = 0 + b : add_0_n
       ... = 0 + c : h
       ... = c     : add_0_n)
   (take a,
-    assume ih : (a + b = a + c → b = c),
+    assume ih : a + b = a + c → b = c,
     assume h0 : S a + b = S a + c,
-    show (b = c), from 
+    show b = c, from 
     proof
-      have h1 : S a + c = S (a + c), from add_Sn_m,
-      have h2 : S a + b = S (a + b), from add_Sn_m,
-      have h3 : S (a + b) = S (a + c),
-        by rewrite [-h0 at h1, h2 at h1]; assumption,
-      have h4 : a + b = a + c, by rewrite -succ_inj; assumption,
-    
-      show (b = c), from ih h4)
-    qed
+      have h1 :   S a + c = S (a + c) , from add_Sn_m,
+      have h2 :   S a + b = S (a + b) , from add_Sn_m,
+      have h3 : S (a + b) = S (a + c) , by rewrite [-h2, -h1, h0],
+      have h4 :     a + b = a + c     , by rewrite [-succ_inj, h3],
+      ih h4
+    qed)
+
+-- definition 2.2.7
+definition is_positive (n : ℕ) : Prop :=
+match n with
+| nat.zero   := false
+| nat.succ p := true
+end
+
+-- proposition 2.2.8
+example (a b : ℕ) : is_positive a → is_positive (a + b) :=
+begin
+  cases b with b,
+    show is_positive a → is_positive (a + 0), by rewrite add_n_0; intro h; assumption,
+    intro h, rewrite add_n_Sm, constructor
+end
+
+-- corollary 2.2.9
+example (a b : ℕ) : (a + b = 0) → a = 0 ∧ b = 0 :=
+begin
+  cases a,
+  intro h, split, trivial, rewrite [-h, add_0_n],
+  intro h, rewrite [add_Sn_m at h], apply nat.no_confusion h
+end
+
+-- lemma 2.2.10
+example : ∀(a : ℕ), is_positive a → ∃!(b : ℕ), S b = a :=
+begin
+  intros a h,
+  induction a with a ih,
+    repeat split, 
+      unfold is_positive at h, exfalso, assumption,
+      unfold is_positive at h, exfalso, assumption,
+    repeat split,
+      clear h, intro y h0, rewrite [-succ_inj, h0] 
+end
+
+-- definition 2.2.11
 
 end ch2
