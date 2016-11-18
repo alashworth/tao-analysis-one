@@ -3,6 +3,9 @@
   Analysis 1, Third Edition, Tao                                             
 \-------------------------------------------------------------------------------/
 
+import logic data.nat
+open classical nat
+
 namespace ch2
 local abbreviation S := nat.succ
 local abbreviation induction_on := @nat.induction_on
@@ -115,19 +118,64 @@ induction_on a
     qed)
 
 -- definition 2.2.7
-definition is_positive (n : ℕ) : Prop :=
-match n with
-| nat.zero   := false
-| nat.succ p := true
-end
+definition is_positive :  ℕ → Prop
+| (nat.zero  ) := false
+| (nat.succ _) := true
 
 -- proposition 2.2.8
-example (a b : ℕ) : is_positive a → is_positive (a + b) :=
+proposition pos_nat_num (a b : ℕ) (h : is_positive a) : is_positive (a + b) :=
+induction_on b
+  (show is_positive (a + 0), by rewrite [add_n_0]; assumption)
+  (take b,
+    assume ih : is_positive (a + b),
+    show is_positive (a + S b), by rewrite [add_n_Sm, ↑is_positive]; trivial)
+
+
+-- corollary 2.2.9
+/- suppose that a neq 0, or b neq zero. if a neq 0, then a is positive, and then 
+a + b = 0 is positive by pos_nat_num, a contradiction. a similar argument follows for b -/
+example (a b : ℕ) (h : a + b = 0) : a = 0 ∧ b = 0 :=
 begin
-  cases b with b,
-    show is_positive a → is_positive (a + 0), by rewrite add_n_0; intro h; assumption,
-    intro h, rewrite add_n_Sm, constructor
+  apply by_contradiction,
+  rewrite not_and_iff_not_or_not,
+  intro h, cases h with [ha, hb],
+    -- showing false from ¬a = 0
+    -- if a neq 0 (premise), then is_positive a
+    have hapos : is_positive a, begin
+      cases a, 
+        unfold not at ha, 
+        have htriv : (nat.zero = nat.zero), from rfl,
+        have hfalse : false, from ha htriv,
+        unfold is_positive, assumption, 
+
+        rewrite add_Sn_m at h, apply nat.no_confusion h
+    end,
+    -- if is_positive a, then is_positive (a + b)
+    have habpos : is_positive (a + b), begin
+      apply pos_nat_num a b hapos
+    end,
+
+    -- contradiction! 
+    rewrite [h at habpos, ↑is_positive at habpos]; assumption,
+
+    -- showing false from ¬b = 0
+    have hb_pos : is_positive b, begin
+      cases b with b,
+        have (nat.zero = nat.zero), from rfl,
+        apply not.elim hb this,
+
+        rewrite add_n_Sm at h, apply nat.no_confusion h
+    end,
+
+    -- if is_positive b, then is_positive (a + b)
+    have h_abpos : is_positive (a + b), begin
+      rewrite add.comm,  apply pos_nat_num b a hb_pos
+    end,
+
+    -- contradiction!
+    rewrite h at h_abpos, unfold is_positive at h_abpos, assumption 
 end
+
 
 -- corollary 2.2.9
 example (a b : ℕ) : (a + b = 0) → a = 0 ∧ b = 0 :=
@@ -137,18 +185,17 @@ begin
   intro h, rewrite [add_Sn_m at h], apply nat.no_confusion h
 end
 
--- lemma 2.2.10
+-- lemma 2.2.10 
+/-
 example : ∀(a : ℕ), is_positive a → ∃!(b : ℕ), S b = a :=
 begin
   intros a h,
   induction a with a ih,
-    repeat split, 
-      unfold is_positive at h, exfalso, assumption,
       unfold is_positive at h, exfalso, assumption,
     repeat split,
       clear h, intro y h0, rewrite [-succ_inj, h0] 
 end
-
+-/
 -- definition 2.2.11
 
 end ch2
