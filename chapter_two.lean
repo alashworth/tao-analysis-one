@@ -3,9 +3,6 @@
   Analysis 1, Third Edition, Tao                                             
 \-------------------------------------------------------------------------------/
 
-import logic data.nat
-open classical nat
-
 namespace ch2
 local abbreviation S := nat.succ
 local abbreviation induction_on := @nat.induction_on
@@ -13,24 +10,17 @@ local abbreviation induction_on := @nat.induction_on
 -- axiom 2.1 - zero is a natural number
 example : ℕ := 0
 
-
 -- axiom 2.2 - if n is a natural number, so is S(n)
 example (n : ℕ) : ℕ := S n 
 
-
 -- axiom 2.3 - zero is not the successor of any natural number
-lemma zero_not_succ (n : ℕ) : S n = 0 ↔ false :=
-begin
-  split, exact nat.no_confusion, intro h; exfalso; assumption
-end
+lemma zero_not_succ (n : ℕ) : S n = 0 → false :=
+(assume h : S n = 0, show false, from nat.no_confusion h)
 
 -- axiom 2.4 - the successor function is injective
-theorem succ_inj (a b : ℕ) : S a = S b ↔ a = b := 
-begin
-  split,
-    intro h, injection h, assumption,
-    intro h; rewrite h
-end
+theorem succ_inj (a b : ℕ) : S a = S b → a = b := 
+assume h : S a = S b,
+  show (a = b), from nat.no_confusion h (λ e : a = b, e)
 
 
 -- auxiliary lemmas
