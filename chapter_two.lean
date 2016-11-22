@@ -136,27 +136,25 @@ nat.cases_on a
           show (S b = S a → b = a), from succ_inj)))
 
 -- proposition 2.2.12 (≥ replaced with ≤ in order to match internal definitions)
+section ordering
+
+variables a b c : ℕ
+
 -- order is reflexive
-example (a : ℕ) : a ≤ a := 
+example : a ≤ a := 
   suffices a + 0 = a, from le.intro this,
   show (a + 0 = a), from add_n_0
 
 -- order is transitive
-example (a b c : ℕ) (hab : a ≤ b) : b ≤ c →  a ≤ c :=
-le.rec hab (λ p H2, le.step) 
+example (h0 : a ≤ b) : b ≤ c → a ≤ c :=
+le.rec h0
+  (take c,
+    assume h0 : (b ≤ c),
+    show (a ≤ c → a ≤ S c), from le.step)
+  
+-- order is antisymmetric
+example (h0 : a ≤ b) (h1 : b ≤ a) : a = b := sorry
 
-section
-
-variables a b c : ℕ
-premise hab : a ≤ b
-
-check le.rec
-check le.rec hab
-check le.rec hab (λ p hypo, le.step)
-check (λ p hypo, le.step)
-check (le.step)
-
-end
-
+end ordering
 
 end ch2
