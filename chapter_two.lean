@@ -6,7 +6,10 @@
 import data.nat
 open eq.ops nat
 
+set_option pp.all true
+
 namespace ch2
+
 local abbreviation S := nat.succ
 local abbreviation induction_on := @nat.induction_on
 
@@ -108,7 +111,7 @@ induction_on a
 -- def 2.2.7, prop 2.2.8 skipped
 
 -- corollary 2.2.9
-example (a b : ℕ) : (a + b = 0) → a = 0 ∧ b = 0 :=
+theorem add_a_b_eq_zero (a b : ℕ) : (a + b = 0) → a = 0 ∧ b = 0 :=
 nat.cases_on a
   (assume h : 0 + b = 0,
     show (0 = 0 ∧ b = 0), from 
@@ -140,21 +143,50 @@ section ordering
 
 variables a b c : ℕ
 
+-- definition of le given in textbook, slightly different from le.intro
+definition le_intro : (∃ k, a + k = b) → a ≤ b := 
+assume h : _,
+begin
+  induction h with k ih,
+  rewrite -ih,
+  apply le_add_right
+end
+
 -- order is reflexive
 example : a ≤ a := 
   suffices a + 0 = a, from le.intro this,
   show (a + 0 = a), from add_n_0
 
 -- order is transitive
-example (h0 : a ≤ b) : b ≤ c → a ≤ c :=
-le.rec h0
-  (take c,
-    assume h0 : (b ≤ c),
-    show (a ≤ c → a ≤ S c), from le.step)
-  
--- order is antisymmetric
-example (h0 : a ≤ b) (h1 : b ≤ a) : a = b := sorry
+example (h0 : a ≤ b) (h1 :  b ≤ c) : a ≤ c :=
+le.induction_on h1
+  (show (a ≤ b), from h0)  -- base case, c = b
+  (take c,                 -- inductive case, c = S b
+    suppose (b ≤ c), 
+    suppose (a ≤ c),
+    show (a ≤ S c), from le.step `a ≤ c`)
 
+-- order is antisymmetric
+example (h0 : a ≤ b) (h1 : b ≤ a) : a = b := 
+le.induction_on h1 
+  (show _, from sorry)
+  (show _, from sorry)
+/-
+
+
+induct on h1 : b ≤ a s.t. PropToProve :=  a ≤ b → a = b
+
+base case : we wish to prove that a ≤ b → a = b, under the condition b = a
+thus we wish to prove b ≤ b → b = b, discharged trivially by identity 
+
+inductive case :
+  we have the condition that b ≤ S a 
+  and must show that S a ≤ b → S a = b follows
+  suppose inductively that ∀(b ≤ a), a ≤ b → a = b, 
+  
+  
+ 
+-/
 end ordering
 
 end ch2
