@@ -6,7 +6,7 @@
 import data.nat
 open eq.ops nat
 
-set_option pp.all true
+set_option pp.implicit true
 
 namespace ch2
 
@@ -143,15 +143,6 @@ section ordering
 
 variables a b c : ℕ
 
--- definition of le given in textbook, slightly different from le.intro
-definition le_intro : (∃ k, a + k = b) → a ≤ b := 
-assume h : _,
-begin
-  induction h with k ih,
-  rewrite -ih,
-  apply le_add_right
-end
-
 -- order is reflexive
 example : a ≤ a := 
   suffices a + 0 = a, from le.intro this,
@@ -167,26 +158,66 @@ le.induction_on h1
     show (a ≤ S c), from le.step `a ≤ c`)
 
 -- order is antisymmetric
-example (h0 : a ≤ b) (h1 : b ≤ a) : a = b := 
-le.induction_on h1 
-  (show _, from sorry)
-  (show _, from sorry)
-/-
-
-
-induct on h1 : b ≤ a s.t. PropToProve :=  a ≤ b → a = b
-
-base case : we wish to prove that a ≤ b → a = b, under the condition b = a
-thus we wish to prove b ≤ b → b = b, discharged trivially by identity 
-
-inductive case :
-  we have the condition that b ≤ S a 
-  and must show that S a ≤ b → S a = b follows
-  suppose inductively that ∀(b ≤ a), a ≤ b → a = b, 
+example (h0 : a ≤ b) (h1 : b ≤ a) : a = b :=
+proof 
+  have h2 : ∃ c, a + c = b, from le.elim h0,
+  have h3 : ∃ d, b + d = a, from le.elim h1,
   
+  obtain (c : ℕ) (h4 : a + c = b), from h2,
+  obtain (d : ℕ) (h5 : b + d = a), from h3,
   
- 
--/
+  have h6 : a = a + (c + d), from 
+    calc
+      a = (a + c) + d : h4⁻¹ ▸ h5⁻¹
+    ... = a + (c + d) : add.assoc,
+  
+  have a + 0 = a + (c + d), by rewrite -add_n_0 at h6{1}; exact h6,
+
+  have h7 : c + d = 0, begin
+    rewrite -add_n_0 at h6{1}; exact (add_cancel h6)⁻¹
+  end,
+
+  have h8 : d = 0, from and.right (add_a_b_eq_zero c d h7),
+  have h9 : b + 0 = a, from `d = 0` ▸ h5,
+  have h10 : b = a, by rewrite add_n_0 at h9; assumption,
+
+  show a = b, from h10⁻¹
+qed
+
+-- addition preserves order
+example : a ≤ b ↔ a + c ≤ b + c :=
+iff.intro
+  (assume h : a ≤ b,
+    le.induction_on h
+      (show a + c ≤ a + c, from le.nat_refl (a + c))
+      (take b,
+        assume h0 : a ≤ b,
+        assume ih : a + c ≤ b + c,
+        show a + c ≤ S b + c, from
+          calc
+            a + c ≤ b + c     : ih
+              ... ≤ S (b + c) : le_succ
+              ... ≤ S b + c   : by rewrite -add_Sn_m))
+    
+  (assume h,
+    show (a ≤ b), from proof
+      obtain (d : ℕ) (h1 : a + c + d = b + c), from le.elim h,
+      have h2 : a + c + d = c + (a + d), from 
+        calc
+          a + c + d = a + (c + d)  : add.assoc
+                ... = a + (d + c)  : add.comm
+                ... = d + c + a    : add.comm
+                ... = c + d + a    : add.comm
+                ... = c + (d + a)  : add.assoc
+                ... = c + (a + d)  : add.comm,        
+      
+      have h3 : b + c = c + b, from add.comm b c,
+      have h4 : c + (a + d) = c + b, from h2⁻¹ ⬝ h1 ⬝ h3,
+      have h5 : a + d = b, from @add_cancel c (a + d) b h4,
+      show a ≤ b, from le.intro h5
+    qed)
+  
+    
 end ordering
 
 end ch2
