@@ -173,9 +173,7 @@ proof
   
   have a + 0 = a + (c + d), by rewrite -add_n_0 at h6{1}; exact h6,
 
-  have h7 : c + d = 0, begin
-    rewrite -add_n_0 at h6{1}; exact (add_cancel h6)⁻¹
-  end,
+  have h7 : c + d = 0, by rewrite -add_n_0 at h6{1}; exact (add_cancel h6)⁻¹,
 
   have h8 : d = 0, from and.right (add_a_b_eq_zero c d h7),
   have h9 : b + 0 = a, from `d = 0` ▸ h5,
@@ -217,7 +215,41 @@ iff.intro
       show a ≤ b, from le.intro h5
     qed)
   
-    
+example : a < b ↔ succ a ≤ b :=
+iff.intro
+  (nat.cases_on b
+    (assume h : a < 0,
+      have false, from not_lt_zero a h,
+      false.elim (`false`))
+    (take b,
+      assume h : a < S b,
+      show S a ≤ S b, from h))
+  (assume h, 
+    show a < b, from h)
+
+example : a < b ↔ ∃ d, b = a + d ∧ d ≠ 0 :=
+iff.intro
+  (assume h : _,
+    have h2 : S a ≤ b, from h,
+    have h3 : ∃ k, S a + k = b, from le.elim h2,
+    obtain (k : ℕ) (h4 : S a + k = b), from h3,
+    exists.intro (S k) 
+      (and.intro
+        (show b = a + S k, by rewrite [-h4, add_Sn_m, add_n_Sm])
+        (show S k ≠ 0, from nat.no_confusion)))
+  (assume h : _,
+    obtain (d : ℕ) (h2 : _), from h,
+    have h3 : b = a + d, from and.elim_left h2,
+    have h4 : d ≠ 0, from and.elim_right h2,
+    suffices a < a + d, by rewrite h3; exact this,
+    have h5 : zero = 0, from eq.refl zero,
+    begin
+      induction d with d,
+      apply (absurd h5 h4),
+      exact lt_add_succ a d
+    end)
+
+
 end ordering
 
 end ch2
