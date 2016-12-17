@@ -1,6 +1,6 @@
 /-------------------------------------------------------------------------------\
-  Solutions for chapter two: the natural numbers                                  
-  Analysis 1, Third Edition, Tao                                             
+  solutions for chapter two: the natural numbers                                  
+  analysis 1, third edition, tao                                             
 \-------------------------------------------------------------------------------/
 
 theorem succ.inj {a b : ℕ} (h : nat.succ a = nat.succ b) : a = b :=
@@ -14,7 +14,7 @@ nat.induction_on c
     calc
       a + b + nat.succ c = nat.succ (a + b + c)   : nat.add_succ (a + b) c
                      ... = nat.succ (a + (b + c)) : by rewrite ih
-                     ... = a + (b + nat.succ c)   : nat.add_succ a (b + c))
+                     ... = a + (b + nat.succ c)   : nat.add_succ a (b + c)).
 
 example (a b : ℕ) : a = 0 ∨ ∃! b, nat.succ b = a :=
 nat.cases_on a
@@ -26,11 +26,11 @@ nat.cases_on a
         (rfl) 
         (take b : ℕ,
           assume h : nat.succ b = nat.succ a,
-          succ.inj h)))
+          succ.inj h))).
 
 example (a : ℕ) : a ≤ a :=
   have h : a + nat.zero = a, from rfl,
-  nat.le.intro h
+  nat.le.intro h.
 
 example (a b c : ℕ) (h1 : a ≤ b) (h2 : b ≤ c) : a ≤ c :=
 nat.less_than.induction_on h2
@@ -38,11 +38,15 @@ nat.less_than.induction_on h2
   (take c' : ℕ,
     assume h3,
     assume ih : a ≤ c',
-    nat.less_than.step ih)
+    nat.less_than.step ih).
+
+check @add_left_cancel
 
 example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := 
 have h3 : ∃ c, a + c = b, from nat.le.dest h1,
 have h4 : ∃ d, b + d = a, from nat.le.dest h2,
-_
-  
-
+exists.elim h3 (take c, assume h5,
+exists.elim h4 (take d, assume h6,
+have h7 : a + c + d = a, from h5^.symm ▸ h6,
+have h8 : c + d = 0, from add_left_cancel h7 ,
+_))
