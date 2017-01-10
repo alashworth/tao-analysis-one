@@ -46,8 +46,8 @@ example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b :=
   have h7 : a + (c + d) = a + 0, from 
     calc
       a + (c + d) = a + c + d : eq.symm (add_assoc a c d) 
-             ... = a         : eq.symm h5 ▸ h6
-             ... = a + 0     : add_zero a,
+              ... = a         : eq.symm h5 ▸ h6
+              ... = a + 0     : add_zero a,
   have h8 : c + d = 0, from add_left_cancel h7,
   have h9 : c = 0, from nat.eq_zero_of_add_eq_zero_right h8,
   have h10 : a + 0 = b, from h9 ▸ h5,
@@ -55,23 +55,24 @@ example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b :=
 
 example (a b c : ℕ) : a ≤ b ↔ a + c ≤ b + c :=
 iff.intro
-(begin
-  intro h,
-  apply nat.less_than.induction_on h,
-  reflexivity,
-  intros d h1 ih,
-  rewrite nat.succ_add,
-  apply nat.less_than.step,
-  exact ih,
-end)
-(assume h,
-  have h1 : ∃ d, a + c + d = b + c, from nat.le.dest h,
-  exists.elim h1 (take d, assume h2 : a + c + d = b + c, 
-  have h3 : a + d + c = b + c, from
-    calc
-      a + d + c = a + (d + c) : nat.add_assoc a d c
-            ... = a + (c + d) : by rw {_ + _}nat.add_comm
-            ... = a + c + d   : by rw nat.add_assoc
-            ... = b + c       : h2,
-_))
-
+  (assume h : a ≤ b,
+    nat.less_than.induction_on h 
+      (nat.less_than.refl (a + c))
+      (take b',
+        assume h : a ≤ b',
+        assume ih : a + c ≤ b' + c,
+        have h2 : a + c ≤ nat.succ (b' + c), from nat.less_than.step ih,
+        have h3 : a + c ≤ nat.succ b' + c, 
+          begin rw -nat.succ_add at h2, exact h2 end, 
+        h3))
+  (assume h : a + c ≤ b + c,
+    have h2 : ∃ d, a + c + d = b + c, from nat.le.dest h,
+    exists.elim h2 (take d, assume h3 : a + c + d = b + c,
+      have h4 : c + (a + d) = c + b, from
+        calc
+          c + (a + d) = a + d + c : add_comm c (a + d)
+                  ... = a + c + d : by simp [add_comm d c]
+                  ... = b + c     : h3
+                  ... = c + b     : add_comm b c,
+      have h5 : a + d = b, from add_left_cancel h4,
+      nat.le.intro h5))
