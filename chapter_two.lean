@@ -75,4 +75,43 @@ iff.intro
                   ... = b + c     : h3
                   ... = c + b     : add_comm b c,
       have h5 : a + d = b, from add_left_cancel h4,
-      nat.le.intro h5))
+      nat.le.intro h5)).
+
+example (a b : ℕ) : a < b ↔ nat.succ a ≤ b :=
+iff.intro
+  (assume h : a < b, h)
+  (assume h : nat.succ a ≤ b, h)
+
+theorem nat.le.dest.iff (n m : ℕ) : n ≤ m ↔ ∃ k, n + k = m :=
+iff.intro
+  (assume h, nat.le.dest h)
+  (assume h2 : ∃ k, n + k = m,
+   exists.elim h2 (take k, assume h3 : n + k = m, nat.le.intro h3))
+
+example (a b : ℕ) : a < b ↔ ∃ c, b = a + c ∧ c ≠ 0 :=
+iff.intro
+  (assume h : a < b,
+    have h2 : nat.succ a ≤ b, from h,
+    have h3 : ∃ d, nat.succ a + d = b, from nat.le.dest h2,
+    exists.elim h3 (take d, assume h4 : nat.succ a + d = b, 
+      exists.intro (nat.succ d) 
+        (and.intro 
+          (show b = a + nat.succ d, from 
+             calc
+               b = nat.succ a + d   : eq.symm h4
+             ... = nat.succ (a + d) : nat.succ_add a d
+             ... = a + nat.succ d   : eq.symm (nat.add_succ a d))
+          (show nat.succ d ≠ 0, from nat.succ_ne_zero d)))) 
+  (assume h : ∃ c, b = a + c ∧ c ≠ 0,
+    exists.elim h (take c, assume h2 : b = a + c ∧ c ≠ 0, 
+      have h3 : b = a + c, from and.left h2,
+      have h4 : c ≠ 0, from and.right h2,
+      have h5 : a ≤ b, from nat.le.intro (eq.symm h3),
+      suffices nat.succ a ≤ b, from this, 
+      suffices nat.succ a ≤ a + c, begin rw h3, exact this end, 
+      begin
+        induction c with c ih,
+          { apply absurd (eq.refl 0) h4 },
+          { rw [nat.add_succ, -nat.succ_add],
+            exact nat.le_add_right (nat.succ a) c},
+      end))
