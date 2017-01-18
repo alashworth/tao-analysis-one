@@ -3,7 +3,6 @@
   analysis 1, third edition, tao                                             
 \-------------------------------------------------------------------------------/
 
-
 theorem succ.inj {a b : ℕ} (h : nat.succ a = nat.succ b) : a = b :=
 nat.no_confusion h (λ e : a = b, e).
 
@@ -38,12 +37,12 @@ example (a : ℕ) : a ≤ a :=
 
 -- order is transitive
 example (a b c : ℕ) (h1 : a ≤ b) (h2 : b ≤ c) : a ≤ c :=
-nat.less_than.induction_on h2
+nat.less_than_or_equal.induction_on h2
   (h1)
   (take c' : ℕ,
     assume h3,
     assume ih : a ≤ c',
-    nat.less_than.step ih).
+    nat.less_than_or_equal.step ih).
 
 -- order is antisymmetric 
 example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := 
@@ -65,12 +64,13 @@ example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b :=
 example (a b c : ℕ) : a ≤ b ↔ a + c ≤ b + c :=
 iff.intro
   (assume h : a ≤ b,
-    nat.less_than.induction_on h 
-      (nat.less_than.refl (a + c))
+    nat.less_than_or_equal.induction_on h 
+      (nat.less_than_or_equal.refl (a + c))
       (take b',
         assume h : a ≤ b',
         assume ih : a + c ≤ b' + c,
-        have h2 : a + c ≤ nat.succ (b' + c), from nat.less_than.step ih,
+        have h2 : a + c ≤ nat.succ (b' + c), 
+          from nat.less_than_or_equal.step ih,
         have h3 : a + c ≤ nat.succ b' + c, 
           begin rw -nat.succ_add at h2, exact h2 end, 
         h3))
@@ -130,7 +130,7 @@ nat.induction_on b
   (nat.le_refl 0)
   (take a',
      assume h,
-     nat.less_than.step h)
+     nat.less_than_or_equal.step h)
 
 example (a b : ℕ) : a > b → nat.succ a > b := 
 nat.induction_on a 
@@ -159,22 +159,18 @@ nat.induction_on a
 -- exercise 2.2.5: prove proposition 2.2.14
 -- principle of strong induction
 
-section strong_induction
+section str
 
-parameter P : nat → Prop
+variables m n : ℕ
+variable P : ℕ → Prop
 
-lemma strong_induction_aux :
-  P 0 → (∀ n m, (m ≤ n → P m) → P (nat.succ n)) → (∀ n m, m ≤ n → P m) := sorry
+lemma Q (h1 : P 0) : ((m ≤ n → P m) → P (nat.succ n)) → P m :=
+nat.induction_on m
+  (assume h2, h1)
+  (take m',
+    assume ih : ((m' ≤ n → P m') → P (nat.succ n)) → P m', 
+    assume h2,
+    _) --http://www.oxfordmathcenter.com/drupal7/node/485
 
-lemma weaken : ∀ n m, m ≤ n → P m → ∀ n, P n := sorry
 
-proposition strong_induction :
-  P 0 → ∀ n m, m ≤ n → P m → P (nat.succ n) → ∀ n, P n := sorry
-
-print strong_induction_aux
-print weaken
-print strong_induction
-
---http://pldev.blogspot.com/2012/02/proving-strong-induction-principle-for.html
-
-end strong_induction
+end str
