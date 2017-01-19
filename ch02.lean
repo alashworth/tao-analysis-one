@@ -159,18 +159,66 @@ nat.induction_on a
 -- exercise 2.2.5: prove proposition 2.2.14
 -- principle of strong induction
 
-section str
+section
 
-variables m n : ℕ
-variable P : ℕ → Prop
+lemma le_or_eq_of_le_succ 
+  {m n : ℕ} (h1 : m ≤ nat.succ n) : m ≤ n ∨ m = nat.succ n :=
+begin
+  cases h1 with k h2,
+  right, exact (eq.refl (nat.succ n)),
+  left, assumption 
+end
 
-lemma Q (h1 : P 0) : ((m ≤ n → P m) → P (nat.succ n)) → P m :=
-nat.induction_on m
-  (assume h2, h1)
-  (take m',
-    assume ih : ((m' ≤ n → P m') → P (nat.succ n)) → P m', 
-    assume h2,
-    _) --http://www.oxfordmathcenter.com/drupal7/node/485
+lemma le_zero_iff_eq_zero {n : ℕ} : n ≤ 0 ↔ n = 0 :=
+begin
+  apply iff.intro, 
+    {intro h, 
+      cases h, 
+      reflexivity},
+    {intro h,
+      rw h}, 
+end
 
+lemma stronger_induction :
+  (∀ P : ℕ → Prop, P 0 → 
+  (∀ n, (∀ m, m ≤ n → P m) → P (nat.succ n)) → 
+  (∀ j, (∀ k, ((k ≤ j) → P k)))) :=
+begin
+  intros P h1 h2 j,
+  induction j with j' ih,
+    intros k h3,
+    assert h4 : k = 0, begin exact iff.mp le_zero_iff_eq_zero h3 end,
+    rw h4,
+    exact h1,
+    intros k h3,
+    assert h4 : k ≤ j' ∨ k = nat.succ j', 
+      begin exact le_or_eq_of_le_succ h3 end,
+    cases h4 with h4l h4r,
+      apply ih, exact h4l,
+      rw h4r,
+      apply h2, exact ih
+end
 
-end str
+lemma weaken :
+  (∀ P : ℕ → Prop, 
+  (∀ n, (∀ m, ((m ≤ n) → P m))) → 
+  (∀ n, P n)) :=
+begin
+  intros P h n,
+  apply (h n n),
+  exact le_refl n
+end
+
+proposition strong_induction :
+  (∀ P : ℕ → Prop, P 0 → 
+  (∀ n, (∀ m, m ≤ n → P m) → P (nat.succ n)) → 
+  (∀ k, P k)) :=
+begin
+  intros P h1 h2,
+  apply weaken,
+  apply stronger_induction,
+    exact h1,
+    exact h2
+end
+
+end
