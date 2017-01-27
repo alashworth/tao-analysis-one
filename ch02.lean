@@ -1,44 +1,147 @@
 open nat
 
 /-------------------------------------------------------------------------------\
-  solutions for chapter two: the natural numbers                                  
-  analysis 1, third edition, tao                                             
+  Chapter 2 - Starting at the beginning: the natural numbers
+  Analysis 1, Third Edition, Tao                                             
 \-------------------------------------------------------------------------------/
 
-theorem succ.inj {a b : ℕ} (h : succ a = succ b) : a = b :=
-nat.no_confusion h (λ e : a = b, e)
+-- For brevity, we do not restate axioms or definitions unless they do not 
+-- exist in Lean's base proof library, such as the book's definition of the 
+-- positive numbers or the power operator.
 
--- exercise 2.2.1: prove proposition 2.2.5
--- addition is associative
-example (a b c : ℕ) : a + b + c = a + (b + c) :=
+proposition prop214 : ℕ := 3.
+
+proposition prop216 : 4 ≠ 0 := succ_ne_zero 3 .
+
+proposition prop218 : 6 ≠ 2 :=
+ne.intro   
+  (assume h1 : 6 = 2,
+    have h2 : succ 5 = succ 1, from h1,
+    have h3 : 5 = 1, from nat.no_confusion h2 (λ h, h),
+    have h4 : succ 4 = succ 0, from h3,
+    have h5 : 4 = 0, from nat.no_confusion h3 (λ h, h),
+    show false, from absurd h5 prop216).
+
+lemma lem222 (n : ℕ) : n + 0 = n := 
+nat.induction_on n
+  (show 0 + 0 = 0, by rw zero_add)
+  (take n',
+    assume ih : n' + 0 = n', 
+    show succ n' + 0 = succ n', by rw add_zero).
+
+lemma lem223 (n m : ℕ) : n + (succ m) = succ (n + m) :=
+nat.induction_on n
+  (show 0 + succ m = succ (0 + m), by repeat {rw zero_add})
+  (take n', 
+    assume ih : n' + succ m = succ (n' + m), 
+    show succ n' + succ m = succ (succ n' + m), from 
+      calc
+        succ n' + succ m 
+          = succ (n' + succ m)   : succ_add n' (succ m)
+      ... = succ (succ (n' + m)) : congr_arg succ ih
+      ... = succ (succ n' + m)   : congr_arg succ (eq.symm (succ_add n' m))).
+
+proposition prop224 (n m : ℕ) : n + m = m + n :=
+nat.induction_on n
+  (show 0 + m = m + 0, by rw [zero_add, add_zero])
+  (take n',
+    assume ih : n' + m = m + n',
+    show succ n' + m = m + succ n', from
+      calc
+        succ n' + m = succ (n' + m) : succ_add n' m
+                ... = succ (m + n') : congr_arg succ ih
+                ... = m + succ n'   : eq.symm (add_succ m n')).
+
+proposition prop225 (a b c : ℕ) : (a + b) + c = a + (b + c) :=
 nat.induction_on c
-  (rfl)
+  (show a + b + 0 = a + (b + 0), by repeat {rw [add_zero]})
   (take c,
     assume ih : a + b + c = a + (b + c),
-    calc
-      a + b + succ c = succ (a + b + c)   : nat.add_succ (a + b) c
-                     ... = succ (a + (b + c)) : congr_arg succ ih
-                     ... = a + (b + succ c)   : nat.add_succ a (b + c)).
+    show a + b + succ c = a + (b + succ c), from
+      calc
+        a + b + succ c = succ (a + b + c)   : add_succ (a + b) c
+                   ... = succ (a + (b + c)) : congr_arg succ ih
+                   ... = a + (b + succ c)   : add_succ a (b + c)).
 
--- exercise 2.2.2: prove lemma 2.2.10
-example (a b : ℕ) : a = 0 ∨ ∃! b, succ b = a :=
-nat.cases_on a
-  (or.inl (eq.refl nat.zero))
-  (take a : ℕ,
-    suffices ∃! b, succ b = succ a, from or.inr this,
-    exists.intro a (and.intro (rfl) 
-      (take b : ℕ,
-        assume h : succ b = succ a,
-        succ.inj h))).
+proposition prop226 (a b c : ℕ) : a + b = a + c →  b = c :=
+nat.induction_on a
+  (assume h1 : 0 + b = 0 + c, 
+    show b = c, by rw [-zero_add b, -zero_add c, h1])
+  (take a',
+    assume ih : a' + b = a' + c → b = c,
+    assume h1 : succ a' + b = succ a' + c,
+    have h2 : succ (a' + b) = succ (a' + c), by rw [-succ_add, -succ_add, h1],
+    have h3 : a' + b = a' + c, from nat.no_confusion h2 (λ h, h),
+    show b = c, from ih h3).
 
--- exercise 2.2.3: prove proposition 2.2.12
+-- definition 2.2.7 
+def is_pos (n : ℕ) := n ≠ 0
+
+proposition prop228 {a b : ℕ} (h1 : is_pos a) : is_pos (a + b) :=
+nat.induction_on b
+  (show is_pos (a + 0), begin rw [add_zero], exact h1 end)
+  (take b',
+    assume ih : is_pos (a + b'),
+    have h1 : a + succ b' = succ (a + b'), from add_succ a b',
+    have h2 : is_pos (succ (a + b')), from succ_ne_zero (a + b'),
+    show is_pos (a + succ b'), begin rw add_succ, exact h2 end)
+
+-- corollary 2.2.9's book proof requires de Morgan's 1st law
+lemma demorgan1 {p q : Prop} :  ¬(p ∧ q) ↔ ¬p ∨ ¬q :=
+iff.intro
+  (assume h1 : ¬(p ∧ q),
+    or.elim (classical.em p) 
+      (assume hp : p, 
+        or.elim (classical.em q) 
+          (assume hq : q, have hpq : p ∧ q, from and.intro hp hq, 
+            show ¬p ∨ ¬q, from absurd hpq h1) 
+          (assume hnq : ¬q, 
+            show ¬p ∨ ¬q, from or.inr hnq)) 
+      (assume hnp : ¬p, 
+        show ¬p ∨ ¬q, from or.inl hnp))
+  (assume h1 : ¬p ∨ ¬q, 
+    or.cases_on h1
+      (assume (hnp : ¬p) (h2 : p ∧ q), 
+        show false, from absurd h2^.left hnp)
+      (assume hnq h2,
+        show false, from absurd h2^.right hnq)).
+
+corollary cor229 (a b : ℕ) (h1 : a + b = 0) : a = 0 ∧ b = 0 :=
+classical.by_contradiction 
+  (assume h2: ¬(a = 0 ∧ b = 0),
+    have h3 : ¬a = 0 ∨ ¬b = 0, from (iff.mp demorgan1) h2,
+    or.cases_on h3
+      (assume h4 : ¬a = 0,
+        have h5 : is_pos a, from h4,
+        have h6 : is_pos (a + b), from prop228 h5, 
+        show false, from absurd h1 h6)
+      (assume h4 : ¬b = 0,
+        have h5 : is_pos b, from h4,
+        have h6 : is_pos (b + a), from prop228 h5,
+        have h7 : b + a = 0, by rw [add_comm, h1], 
+        show false, from absurd h7 h6)).
+
+lemma lem2210 (a b : ℕ) : is_pos a → ∃! b, succ b = a :=
+nat.induction_on a
+  (assume h : is_pos 0,
+    show ∃! b, succ b = 0, from absurd (eq.refl 0) h)
+  (take a',
+    assume ih : is_pos a' → (∃! (b : ℕ), succ b = a'),
+    assume h1 : is_pos (succ a'),
+    exists.intro a' 
+      (and.intro 
+        (show succ a' = succ a', from eq.refl (succ a'))
+        (take k,
+          assume h : succ k = succ a', 
+          show k = a', from nat.no_confusion h (λ h, h)))).
+
 -- order is reflexive
-example (a : ℕ) : a ≤ a :=
+proposition prop2212a (a : ℕ) : a ≤ a :=
   have h : a + nat.zero = a, from rfl,
   nat.le.intro h.
 
 -- order is transitive
-example (a b c : ℕ) (h1 : a ≤ b) (h2 : b ≤ c) : a ≤ c :=
+proposition prop2212b (a b c : ℕ) (h1 : a ≤ b) (h2 : b ≤ c) : a ≤ c :=
 nat.less_than_or_equal.induction_on h2
   (h1)
   (take c' : ℕ,
@@ -47,7 +150,7 @@ nat.less_than_or_equal.induction_on h2
     nat.less_than_or_equal.step ih).
 
 -- order is antisymmetric 
-example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := 
+proposition prop2212c (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := 
   have h3 : ∃ c, a + c = b, from nat.le.dest h1,
   have h4 : ∃ d, b + d = a, from nat.le.dest h2,
   exists.elim h3 (take c, assume h5 : a + c = b,
@@ -63,7 +166,7 @@ example (a b : ℕ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b :=
   show a = b, from h10)).
 
 -- addition preserves order
-example (a b c : ℕ) : a ≤ b ↔ a + c ≤ b + c :=
+proposition prop2212d (a b c : ℕ) : a ≤ b ↔ a + c ≤ b + c :=
 iff.intro
   (assume h : a ≤ b,
     nat.less_than_or_equal.induction_on h 
@@ -88,12 +191,12 @@ iff.intro
       have h5 : a + d = b, from add_left_cancel h4,
       nat.le.intro h5)).
 
-example (a b : ℕ) : a < b ↔ succ a ≤ b :=
+proposition prop2212e (a b : ℕ) : a < b ↔ succ a ≤ b :=
 iff.intro
   (assume h : a < b, h)
   (assume h : succ a ≤ b, h)
 
-example (a b : ℕ) : a < b ↔ ∃ c, b = a + c ∧ c ≠ 0 :=
+proposition prop2212f (a b : ℕ) : a < b ↔ ∃ d, b = a + d ∧ is_pos d :=
 iff.intro
   (assume h : a < b,
     have h2 : succ a ≤ b, from h,
@@ -125,38 +228,8 @@ iff.intro
           suffices succ a ≤ succ a + c', begin rw h3, exact this end, 
           nat.le_add_right (succ a) c'))).
 
--- exercise 2.2.4: complete the proof of proposition 2.2.13
 -- trichotomy of order
-example (a b : ℕ) : 0 ≤ b :=
-nat.induction_on b
-  (nat.le_refl 0)
-  (take a',
-     assume h,
-     nat.less_than_or_equal.step h)
-
-example (a b : ℕ) : a > b → succ a > b := 
-nat.induction_on a 
-  (assume h : 0 > b, 
-     have h1 : b < 0, from h, 
-     have h2 : false, from iff.mp (nat.lt_zero_iff_false b) h1,
-     false.elim h2)
-  (take a', 
-     assume ih h,
-     have h2 : b < succ a', from h,
-     nat.lt.step h2)
-
-example (a b : ℕ) : a = b → succ a > b :=
-nat.induction_on a
- (assume h,
-   have h1 : 0 < 1, from succ_pos 0,
-   eq.rec h1 h)
- (take a',
-   assume ih h,
-   have h2 : succ (succ a') ≤ succ (succ a'), 
-     from le_refl (succ (succ a')),
-   have h3 : succ a' < succ (succ a'), from h2,
-   have h4 : b < succ (succ a'), begin rw -h, exact h3 end,
-   h4)
+proposition prop2213 (a b : ℕ) : a < b ∨ a = b ∨ a > b := sorry
 
 -- exercise 2.2.5: prove proposition 2.2.14
 -- principle of strong induction
