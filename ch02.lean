@@ -229,28 +229,51 @@ iff.intro
           nat.le_add_right (succ a) c'))).
 
 -- trichotomy of order
-proposition prop2213 (a b : ℕ) : a < b ∨ a = b ∨ a > b := sorry
+proposition prop2213 (a b : ℕ) : a < b ∨ a = b ∨ a > b := 
+nat.induction_on a
+  (have h1 : 0 ≤ b, from zero_le b,
+    have h2 : _, from lt_or_eq_of_le h1,
+    or.cases_on h2 
+      (assume h3, or.inl h3)
+      (assume h3, or.inr (or.inl h3)))
+  (take a',
+    assume ih,
+    or.cases_on ih
+      (assume h1, 
+        have h2 : succ a' ≤ b, from succ_le_of_lt h1, 
+        have h3 : _, from lt_or_eq_of_le h2, 
+        or.cases_on h3 
+          (assume h4, or.inl h4)
+          (assume h4, or.inr (or.inl h4)))
+      (assume ih2,
+        or.cases_on ih2
+          (assume h1,
+            have h2 : succ a' > a', from lt_succ_self a', 
+            or.inr (or.inr (h1 ▸ h2)))
+          (assume h1,
+            have h2 : succ a' > b, from lt.step h1,
+            or.inr (or.inr h2))))
+
 
 -- exercise 2.2.5: prove proposition 2.2.14
 -- principle of strong induction
 
-lemma le_or_eq_of_le_succ 
-  {m n : ℕ} (h1 : m ≤ succ n) : m ≤ n ∨ m = succ n :=
-begin
-  cases h1 with k h2,
-  right, exact (eq.refl (succ n)),
-  left, assumption 
-end
+lemma le_or_eq_of_le_succ  {m n : ℕ} (h1 : m ≤ succ n) : m ≤ n ∨ m = succ n:= 
+have h2 : _, from lt_or_eq_of_le h1, 
+or.cases_on h2
+  (assume h3, have h4 : m ≤ n, from le_of_lt_succ h3, or.inl h4)
+  (assume h3, or.inr h3)
 
 lemma le_zero_iff_eq_zero {n : ℕ} : n ≤ 0 ↔ n = 0 :=
-begin
-  apply iff.intro, 
-    {intro h, 
-      cases h, 
-      reflexivity},
-    {intro h,
-      rw h}, 
-end
+iff.intro
+  (assume h1, 
+    have h2 : _, from lt_or_eq_of_le h1,
+    or.cases_on h2
+      (assume h3, 
+        have h4 : _, from iff.mp (lt_zero_iff_false n),
+        have h5 : _, from h4 h3, false.elim h5)
+      (λ h3, h3))
+  (assume h1, le_of_eq h1)
 
 lemma stronger_induction :
   (∀ P : ℕ → Prop, P 0 → 
@@ -454,10 +477,13 @@ begin
   -- the first insight - induct on n
   induction n with n ih,
     existsi 0, existsi 0, simp, split, exact h1, exact le_refl 0,
-    cases ih with m ih, cases ih with r ih, cases ih with h2 ih, cases ih with h3 h4,
+    cases ih with m ih, 
+    cases ih with r ih, 
+    cases ih with h2 ih, 
+    cases ih with h3 h4,
     assert h5 : succ n = m * q + (succ r), begin exact congr_arg succ h4 end,
     assert h6 : succ r ≤ q, exact h3,
-  -- the second insight - case analysis on h7
+    -- the second insight - case analysis on h7
     assert h7 : succ r < q ∨ succ r = q, exact lt_or_eq_of_le h6,
     cases h7 with h7 h7,
       existsi m, existsi (succ r), split, 
