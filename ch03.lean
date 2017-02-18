@@ -1,8 +1,10 @@
 import data.set
 open set
 
--- Chapter 3 - Set Theory-------------------------------------------------------
-section 
+---------------------------------------------------------------------------------
+--  Chapter 3 - Set theory
+--  Analysis 1, Third Edition, Tao                                             
+---------------------------------------------------------------------------------
 
 universe u
 variables {α : Type u} {A B C : set α}
@@ -292,12 +294,35 @@ and.intro
 -- Exercise 3.1.10. Let A and B be sets. Show that the three sets A ∖ B, A ∩ B 
 -- and B ∖ A are disjoint, and that their union is A ∪ B.
 
-example {x} : x ∈  A ∖ B ↔ x ∉ A ∩ B := 
+example : (A ∖ B) ∩ (A ∩ B) = ∅ := ext (take x, 
 iff.intro 
-  (assume ⟨h1, h2⟩ ⟨h3, h4⟩, absurd h4 h2) 
-  (assume h1, and.intro _ _) 
+  (assume ⟨⟨h1, h2⟩, h3, h4⟩, absurd h4 h2) 
+  (assume h1, have h2 : _, from not_mem_empty x, absurd h1 h2)) 
 
+example : (A ∩ B) ∩ (B ∖ A) = ∅ := ext (take x, iff.intro
+  (assume ⟨⟨h1, h2⟩, _, h3⟩, absurd h1 h3)
+  (assume h1, absurd h1 (not_mem_empty x)))
+
+example : (A ∖ B) ∩ (B ∖ A) = ∅ := ext (take x, iff.intro 
+  (assume ⟨⟨h1, h2⟩, h3, h4⟩, absurd h1 h4)
+  (assume h1, absurd h1 (not_mem_empty x)))
+
+example : (A ∖ B) ∪ (A ∩ B) ∪ (B ∖ A) = A ∪ B := 
+ext (take x, iff.intro 
+  (λ h1, or.elim h1 
+    (λ h2, or.elim h2 
+      (λ ⟨h3, h4⟩, or.inl h3) 
+      (λ ⟨h3, h4⟩, or.inl h3)) 
+    (λ h2, or.inr h2^.left))
+  (λ h1, or.elim h1
+    (λ h2, or.elim (classical.em (x ∈ B)) 
+      (λ h3, or.inl (or.inr ⟨h2, h3⟩)) 
+      (λ h3, or.inl (or.inl ⟨h2, h3⟩)))
+    (λ h2, or.elim (classical.em (x ∈ A)) 
+      (λ h3, or.inl (or.inr ⟨h3, h2⟩)) 
+      (λ h3, or.inr (⟨h2, h3⟩)))))
 
 -- Exercise 3.1.11. Show that the axiom of replacement implies the axiom of 
 -- specification.
-end
+
+-- Skipped for being difficult
