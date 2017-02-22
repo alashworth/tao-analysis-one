@@ -151,22 +151,40 @@ h1 ▸ h2
 
 section
 
-/-
-Let m₀ be a natural number, and let P(m) be a property pertaining to an arbitrary natural number m. Suppose that for each m ≥ m₀, we have the following implication: if
-P m' is true for all natural numbers m₀ ≤ m' < m, then P m is also true. Then we can conclude that P m is true for all natural numbers m ≥ m₀
+parameters (m₀ : ℕ) (P : ℕ → Prop)
 
-(Hint: define Q(n) to be the property that P(m) is true for all m₀ ≤ m < n; note that Q(n) is vacously true when n ≤ m₀
--/
-
-end
+theorem strong_induction {P : ℕ → Prop} {m₀ : ℕ} 
+(h1 : ∀ m n, (m₀ ≤ m → m < n → P m) → P n) : ∀ k, P k :=
+assume (k : ℕ), 
+have h1 : (m₀ ≤ k → k < k → P k) → P k, from h1 k k, 
+suffices (m₀ ≤ k → k < k → P k), from h1 this, 
+assume (h2 : m₀ ≤ k) (h3 : k < k), 
+absurd h3 (iff.mp (lt_self_iff_false k))
 
 -- Exercise 2.2.6. Let n be a natural number, and let P(m) be a property
 -- pertaining to the natural numbers such that whenever P(m++) is true, then P(m)
 -- is true. Suppose that P(n) is also true. Prove that P(m) is true for all
 -- natural numbers m ≤ n; this is known as the principle of backwards induction.
--- (Hint: induct on n)
 
--- TODO
+lemma eq_zero_of_le_zero {n : ℕ} (h : n ≤ 0) : n = 0 :=
+have h1 : n < 0 ∨ n = 0, from lt_or_eq_of_le h, 
+or.elim h1 (λ h2, absurd h2 (not_lt_zero _)) (id)
+
+theorem backwards_induction  
+  (m n : ℕ) (P : ℕ → Prop) (h1 : ∀ {m}, P (succ m) → P m) :
+  P n → (m ≤ n → P m) :=
+nat.induction_on n
+  (assume h2 h3, 
+    have h4 : m = 0, from eq_zero_of_le_zero h3, h4^.symm ▸ h2)
+  (assume n' h2 h3 h4, 
+    have h5 : P n', from h1 h3, 
+    have h6 : m < succ n' ∨ m = succ n', from lt_or_eq_of_le h4, 
+    or.elim h6 
+      (assume h7, 
+        have h8 : m ≤ n', from le_of_lt_succ h7, 
+        h2 h5 h8) 
+      (assume h7 : m = succ n', h7^.symm ▸ h3))
+
 
 -- Exercise 2.3.1. Prove Lemma 2.3.2.
 
