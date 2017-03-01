@@ -6,6 +6,8 @@ open set
 --  Analysis 1, Third Edition, Tao                                             
 ---------------------------------------------------------------------------------
 
+section
+
 universe u
 variables {α : Type u} {A B C : set α}
 
@@ -322,7 +324,82 @@ ext (take x, iff.intro
       (λ h3, or.inl (or.inr ⟨h3, h2⟩)) 
       (λ h3, or.inr (⟨h2, h3⟩)))))
 
+end
+
 -- Exercise 3.1.11. Show that the axiom of replacement implies the axiom of 
 -- specification.
 
--- Skipped for being difficult
+-- Skipped. How do you express Tao's axiom of replacement in Lean
+-- syntax?
+
+-- Russell's Paradox -- Skipped
+
+section 
+
+universes u v w
+variables {α : Type u} {β : α → Type v}
+
+local infix ` ~ ` := function.equiv
+
+
+-- Exercise 3.3.1. Show that the definition of function equality is reflexive,
+-- symettric, and transitive
+
+-- Lean's function equivalence definition: 
+-- equiv (f₁ f₂ : π x : α, β x) : Prop := ∀ x, f₁ x = f₂ x
+
+example (f : Π x : α, β x) : f ~ f := take x, rfl
+example (f₁ f₂ : Π x : α, β x) : f₁ ~ f₂ → f₂ ~ f₁ := λ h x, eq.symm (h x)
+example {f₁ f₂ f₃ : Π x: α, β x} : f₁ ~ f₂ → f₂ ~ f₃ → f₁ ~ f₃ :=
+  λ h₁ h₂ x, eq.trans (h₁ x) (h₂ x)
+
+end
+-- substitution property: skipped
+
+-- Exercise 3.3.2.
+-- injectivity (f : α → β) : Prop := ∀ ⦃a₁ a₂⦄, f a₁ = f a₂ → a₁ = a₂
+-- surjectivity (f : α → β) : Prop := ∀ b, ∃ a, f a = b
+section
+
+open function
+
+universes u₁ u₂ u₃
+
+variables {α : Type u₁} {β : Type u₂} {φ : Type u₃}
+
+-- injectivity and function composition
+example {g : β → φ} {f : α → β} (hg : injective g) (hf : injective f) : 
+  injective (g ∘ f) :=
+take a₁ a₂, assume h, hf (hg h)
+
+-- surjectivity and function composition
+example {g : β → φ} {f : α → β} (hg : surjective g) (hf : surjective f) 
+  : surjective (g ∘ f) :=
+λ (c : φ), exists.elim (hg c) (λ b hb, exists.elim (hf b) (λ a ha,
+  exists.intro a (show g (f a) = c, from (eq.trans (congr_arg g ha) hb))))
+
+-- Exercise 3.3.3: Skipped
+
+-- Exercise 3.3.4. Cancellation laws for function composition
+
+example (f₁ f₂ : α → β) (g₁ g₂ : β → φ) (h₁ : g₁ ∘ f₁ = g₁ ∘ f₂) 
+  (hg : injective g₁) : f₁ = f₂ := 
+funext (take x, 
+  have h₂ : g₁ (f₁ x) = g₁ (f₂ x) → f₁ x = f₂ x, from @hg (f₁ x) (f₂ x), 
+  have h₃ : _, from congr_fun h₁ x,
+  h₂ (congr_fun h₁ x))
+
+example (f : α → β) (g₁ g₂ : β → φ) (hf : surjective f) (h₁ : g₁ ∘ f = g₂ ∘ f) :
+  g₁ = g₂ :=
+funext (take y, 
+  exists.elim (hf y) (take x hf₁,
+    eq.rec (congr_fun h₁ x) hf₁))
+
+-- Exercise 3.3.5. 
+-- Exercise 3.3.6.
+-- Exercise 3.3.7.
+-- Exercise 3.3.8.
+-- SKIPPED 
+
+end
+-- Exercise 3.4.1.
