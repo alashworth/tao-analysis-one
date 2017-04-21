@@ -136,7 +136,7 @@ section balg
 
 -- a lot of these are trivially provable in Lean because of how sets are defined
 variable X : set α
-premises (h1 : A ⊆ X) (h2 : B ⊆ X) (h3 : C ⊆ X)
+variables (h1 : A ⊆ X) (h2 : B ⊆ X) (h3 : C ⊆ X)
 
 -- minimal element
 example : A ∪ ∅ = A := ext (take x, or_false (x ∈ A))
