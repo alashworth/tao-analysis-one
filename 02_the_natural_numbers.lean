@@ -330,7 +330,6 @@ nat.rec_on n
 
 
 -- Exercise 2.3.1. Prove Lemma 2.3.2.
-
 example (n m : ℕ) : n * m = m * n :=
 nat.rec_on m
   (show n * 0 = 0 * n, from 
