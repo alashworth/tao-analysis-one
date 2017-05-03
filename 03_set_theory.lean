@@ -1,35 +1,106 @@
-import data.set
-open set
-
 ---------------------------------------------------------------------------------
 --  Chapter 3 - Set theory
 --  Analysis 1, Third Edition, Tao                                             
 ---------------------------------------------------------------------------------
 
-section
+import data.set
+
+-- Remark: As in other chapters, existing theorems in Lean's proof library are 
+-- used if they duplicate theorems described in the chapter. Such theorems will
+-- be denoted as examples.
 
 universe u
-variables {α : Type u} {A B C : set α}
+variable {α : Type u}
+-- Remark: consider α to be the "objects" described in chapter 3
 
--- As of Lean 3.0, certain set operations aren't defined. They are below.
+-- Axiom 3.1 (Sets are objects). If A is a set, then A is also an object. In 
+-- particular, given two sets A and B, it is meaningful to ask whether A is
+-- also and element of B.
+example (A : set α) (B : set (set α)) : Prop := A ∈ B
 
--- Definition 3.1.4
-lemma ext_eq {a b : set α} (h : ∀ x, x ∈ a ↔ x ∈ b) : a = b :=
-funext (take x, propext (h x))
+-- Definition 3.1.4 (Equality of sets). Two sets A and B are equal, A = B, iff
+-- every element of A is an element of B and vice versa.
+example (A B : set α) : (∀ x : α, x ∈ A ↔ x ∈ B) → A = B := set.ext  
+-- To put it another way, A = B iff every element x of A belongs also to B, and 
+-- every element y of B belongs also to A.
+theorem ext.elim {A B : set α} (h : A = B) : ∀ x, x ∈ A ↔ x ∈ B := 
+λ x, iff.intro (λ h₂, h ▸ h₂) (λ h₂, h.symm ▸ h₂)
 
-lemma exti {a b : set α} (h : a = b) : ∀ x, x ∈ a ↔ x ∈ b :=
-take x, iff.intro (assume h2, h ▸ h2) (assume h2, h^.symm ▸ h2)
+-- Axiom 3.2 (Empty set). There exists a set ∅, known as the empty set, which 
+-- contains no elements, i.e., for every object x we have x ∉ ∅.
+example (A : set α) : (∀ (x : α), x ∉ A) → A = ∅ := set.eq_empty_of_forall_not_mem
 
-definition diff {α} (s t : set α) : set α := {x ∈ s | x ∉ t}
-infix ` ∖ `:70 := diff
+-- Lemma 3.1.6 (Single choice). Let A be a non-empty set. Then there exists an
+-- object x such that x ∈ A.
+lemma single_choice {A : set α} (h : A ≠ ∅) : ∃ x, x ∈ A :=
+classical.by_contradiction
+  (suppose ¬ ∃ x, x ∈ A, 
+    have h₂ : ∀ x, x ∉ A, from forall_not_of_not_exists this, 
+    show false, from h (set.eq_empty_of_forall_not_mem h₂)) 
 
-definition strict_subset {α} (s t : set α) := s ⊆ t ∧ s ≠ t
-infix ` ⊊ `:50 := strict_subset
+-- Axiom 3.3 (Singleton sets and pair sets). If a is an object, then there exists
+-- a set {a} whose only element is a, i.e., for every object y, y ∈ {a} iff y = a; we 
+-- refer to {a} as the singleton set whose element is a. Furthermore, if a and b 
+-- are objects, then there exists a set {a,b} whose only elements are a and b; i.e.,
+-- for every object y, y ∈ {a,b} iff y = a or y = b; we refer to this set as the pair
+-- set formed by a and b.
+theorem singleton_eq (x : α) : ({x} : set α) = insert x ∅ := rfl
+
+theorem mem_singleton_iff (a b : α) : a ∈ ({b} : set α) ↔ a = b :=
+iff.intro
+  (assume ainb,
+    or.elim (ainb : a = b ∨ false) (λ aeqb, aeqb) (λ f, false.elim f))
+  (assume aeqb, or.inl aeqb)
+
+-- Axiom 3.4 (Pairwise union). Given any two sets A, B, there exists a set A ∪ B,
+-- called the union A ∪ B of A and B, whose elements consist of all the elements
+-- which belong to A or B or both. 
+example (A B : set α): ∀ x : α, x ∈ A ∪ B ↔ x ∈ A ∨ x ∈ B :=
+λ x, iff.intro id id
+
+-- Lemma 3.1.12. If a and b are objects, then {a,b} = {a} ∪ {b}. If A, B, C
+-- are sets, then the union operation is commutative and associative. Also,
+-- A ∪ A = A ∪ ∅ = ∅ ∪ A = A.
+section set_union
+  variables (A B C : set α)
+  -- Set union is associative
+  example : A ∪ B ∪ C = A ∪ (B ∪ C) := set.union_assoc _ _ _ 
+  -- Set union is commutative
+  example : A ∪ B = B ∪ A := set.union_comm _ _
+  -- Set union identity
+  example : A ∪ A = A := set.union_self _
+  -- Union of the empty set is an identity relationship
+  example : A ∪ ∅ = A := set.union_empty _
+end set_union
+
+-- Definition 3.1.14 (Subsets). Let A, B be sets. We say that A is a subset of B,
+-- denoted A ⊆ B, iff every element of A is also an element of B.
+example (A B : set α) : A ⊆ B ↔ ∀ x : α, x ∈ A → x ∈ B :=
+iff.intro (λ h x, set.mem_of_subset_of_mem h) id 
+-- We say that A is a proper subset of B, denoted A ⊂ B, if A ⊆ B and A ≠ B
+def strict_subset (a b : set α) := a ⊆ b ∧ a ≠ b
+instance : has_ssubset (set α) := ⟨strict_subset⟩
+
+-- Proposition 3.1.17 (Sets are partially ordered by set inclusion). Let A, B, C
+-- be sets. If A ⊆ B and B ⊆ C, then A ⊆ C. If instead A ⊆ B and B ⊆ A, then A = B.
+-- Finally, if A ⊂ B and B ⊂ C then A ⊂ C. 
+section ordering_set_inclusion
+  variables {A B C : set α}
+  -- Set subset is transitive
+  example : A ⊆ B → B ⊆ C → A ⊆ C := set.subset.trans
+  -- Set subset can show equality
+  example : A ⊆ B → B ⊆ A → A = B := set.eq_of_subset_of_subset
+  -- Proper subsets are transitive
+  theorem ssubset.trans : A ⊂ B → B ⊂ C → A ⊂ C := 
+  λ ⟨h₁, h₂⟩ ⟨h₃, h₄⟩, 
+    and.intro 
+      (set.subset.trans h₁ h₃) 
+      (show A ≠ C, from λ h₅, sorry)  -- TODO
+end ordering_set_inclusion
 
 -- Exercise 3.1.1. Show that the definition of equality in (3.1.4) is reflexive,
 -- symmetric, and transitive.
-
-example : A = A := 
+example : A = A
 ext (take x, show x ∈ A ↔ x ∈ A, from iff.intro id id)
 
 example : A = B → B = A := 
@@ -57,11 +128,6 @@ absurd this (not_mem_empty _).
 -- The other pairwise inequalities can be shown using the method above.
 
 -- Exercise 3.1.3. Prove the remaining claims in Lemma 3.1.12.
-
-example : A ∪ B = B ∪ A := ext (take x, or.comm).
-example : A ∪ A = A := ext (take x, or_self _).
-example : A ∪ ∅ = A := ext (take x, or_false _).
-example : ∅ ∪ A = A := ext (take x, false_or _).
 
 -- Exercise 3.1.4. Prove the remaining claims in Proposition 3.1.17. 
 
@@ -400,6 +466,7 @@ funext (take y,
 -- Exercise 3.3.7.
 -- Exercise 3.3.8.
 -- SKIPPED 
-
 end
+
 -- Exercise 3.4.1.
+lemma mem_union_left {x : α} {A B : set α} (h : x ∈ A) : x ∈ A ∪ B := or.inl h 
