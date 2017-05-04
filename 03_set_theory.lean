@@ -7,7 +7,7 @@ import data.set .logic
 
 -- Remark: As in other chapters, existing theorems in Lean's proof library are 
 -- used if they duplicate theorems described in the chapter.
-
+section
 universe u
 variable {α : Type u}
 -- Remark: consider α to be the "objects" described in chapter 3
@@ -232,18 +232,20 @@ assume h1 h2,
 
 -- Exercise 3.1.2. Using only definition 3.1.4, axiom 3.2, and axiom 3.3, prove
 -- that the sets ∅, {∅}, and {{∅}}, and {∅,{∅}} are all distinct
+
 lemma mem_of_self_singleton (a : α) : a ∈ ({a} : set α) := or.inl rfl
 
-lemma empty_ne : (∅ : set (set α)) ≠ {∅} :=
+example : (∅ : set (set α)) ≠ {∅} :=
 assume h : ∅ = {∅},
 have ∅ ∈ ({∅} : set (set α)), from mem_of_self_singleton _,
 have ∅ ∈ (∅ : set (set α)), from eq.rec_on h^.symm this,
 absurd this (set.not_mem_empty _).
 
+-- TODO: other five cases (ugh!)
+
 -- Exercise 3.1.5. Let A, B be sets. Show that the three statements 
 -- A ⊆ B, A ∪ B = B, and A ∩ B = A are logically equivalent. 
 section exercise_315
-
   variables {A B C : set α}
   open set
 
@@ -289,5 +291,118 @@ section exercise_315
   have h3 : x ∈ A ∧ x ∈ B ↔ x ∈ A, from ext.elim h1 x, 
   have x ∈ A → x ∈ A ∧ x ∈ B, from iff.mpr h3,
   have x ∈ A ∧ x ∈ B, from this h2, this^.right
-
 end exercise_315
+
+-- Exercise 3.1.7. Let A, B, and C be sets. Show that A ∩ B ⊆ A and A ∩ B ⊆ B. 
+-- Furthermore, show that C ⊆ A and C ⊆ B if and only if C ⊆ A ∩ B. In a similar
+-- spirit, show that A ⊆ A ∪ B and B ⊆ A ∪ B, and furthermore that A ⊆ C and 
+-- B ⊆ C if and only if A ∪ B ⊆ C.
+section
+variables {A B C : set α}
+
+example : A ∩ B ⊆ A := take x, assume h1 : x ∈ A ∧ x ∈ B, h1^.left
+example : A ∩ B ⊆ B := take x, assume h1 : x ∈ A ∧ x ∈ B, h1^.right
+
+example : C ⊆ A ∧ C ⊆ B ↔ C ⊆ (A ∩ B) := 
+iff.intro 
+  (assume ⟨h1, h2⟩, take x, assume h3, and.intro (h1 h3) (h2 h3)) 
+  (assume h1 : ∀ {x}, x ∈ C → x ∈ (A ∩ B), and.intro 
+    (take x, assume h2, have h3 : x ∈ A ∧ x ∈ B, from h1 h2, h3^.left) 
+    (take x, assume h2, have h3 : x ∈ A ∧ x ∈ B, from h1 h2, h3^.right))
+
+example : A ⊆ A ∪ B := λ x h, or.inl h
+example : B ⊆ A ∪ B := λ x h, or.inr h
+
+example : A ⊆ C ∧ B ⊆ C ↔ A ∪ B ⊆ C :=
+iff.intro
+  (assume ⟨h1, h2⟩, λ x h3, or.elim h3 (λ h4, h1 h4) (λ h4, h2 h4))
+  (assume h1 : ∀ {x}, x ∈ (A ∪ B) → x ∈ C, and.intro 
+    (λ x h2, h1 (or.inl h2)) 
+    (λ x h2, h1 (or.inr h2)))
+end
+
+-- Exercise 3.1.8. Let A and B bet sets. Prove the absorption laws
+--  A ∩ (A ∪ B) = A and A ∪ (A ∩ B) = A.
+section
+variables {A B : set α}
+
+example : A ∩ (A ∪ B) = A := set.ext (take x, 
+iff.intro 
+  (λ ⟨h1, h2⟩, h1) 
+  (λ h1, and.intro h1 (or.inl h1)))
+
+example : A ∪ (A ∩ B) = A := set.ext (take x,
+iff.intro
+  (λ h1, or.elim h1 id (λ ⟨h2, h3⟩, h2))
+  (λ h1, or.inl h1))
+end
+
+-- Exercise 3.1.9. Let A, B, and X be sets such that A ∪ B = X and A ∩ B = ∅. 
+-- Show that A = X ∖ B and B = X ∖ A.
+example (A B X : set α) (h1 : A ∪ B = X) (h2 : A ∩ B = ∅) 
+  : A = X \ B ∧ B = X \ A :=
+and.intro 
+  (set.ext (take x, iff.intro 
+    (assume h3 : x ∈ A, and.intro 
+      (have h4 : _, from ext.elim h1 x, 
+        have h5 : x ∈ A ∨ x ∈ B, from or.inl h3, iff.mp h4 h5) 
+      (assume h4, 
+        have h5 : _, from ext.elim h2 x, 
+        have h6 : x ∈ ∅, from iff.mp h5 ⟨h3, h4⟩, 
+        absurd h6 (set.not_mem_empty _))) 
+    (assume ⟨h3, h4⟩, 
+      have h5 : _, from iff.mpr (ext.elim h1 x) h3, or.elim h5 (id) 
+        (assume h6, absurd h6 h4))))
+  (set.ext (take x, iff.intro 
+    (assume h3, and.intro 
+      (have h4 : _, from iff.mp (ext.elim h1 x), h4 (or.inr h3)) 
+      (assume h4, have h5 : _, from iff.mp (ext.elim h2 x), h5 ⟨h4, h3⟩))
+    (assume ⟨h3, h4⟩, have h5 : _, from iff.mpr (ext.elim h1 x) h3, 
+      or.elim h5 (assume h6, absurd h6 h4) (id))))
+
+-- Exercise 3.1.10. Let A and B be sets. Show that the three sets A ∖ B, A ∩ B 
+-- and B ∖ A are disjoint, and that their union is A ∪ B.
+example (A B : set α) : (A \ B) ∩ (A ∩ B) = ∅ := 
+set.ext (take x, iff.intro 
+  (assume ⟨⟨h1, h2⟩, h3, h4⟩, absurd h4 h2) 
+  (assume h1, have h2 : _, from set.not_mem_empty x, absurd h1 h2)) 
+
+example (A B : set α) : (A ∩ B) ∩ (B \ A) = ∅ := 
+set.ext (take x, iff.intro
+  (assume ⟨⟨h1, h2⟩, _, h3⟩, absurd h1 h3)
+  (assume h1, absurd h1 (set.not_mem_empty x)))
+
+example (A B : set α) : (A \ B) ∩ (B \ A) = ∅ := 
+set.ext (take x, iff.intro 
+  (assume ⟨⟨h1, h2⟩, h3, h4⟩, absurd h1 h4)
+  (assume h1, absurd h1 (set.not_mem_empty x)))
+
+example (A B : set α) : (A \ B) ∪ (A ∩ B) ∪ (B \ A) = A ∪ B := 
+set.ext (take x, iff.intro 
+  (λ h1, or.elim h1 
+    (λ h2, or.elim h2 
+      (λ ⟨h3, h4⟩, or.inl h3) 
+      (λ ⟨h3, h4⟩, or.inl h3)) 
+    (λ h2, or.inr h2^.left))
+  (λ h1, or.elim h1
+    (λ h2, or.elim (classical.em (x ∈ B)) 
+      (λ h3, or.inl (or.inr ⟨h2, h3⟩)) 
+      (λ h3, or.inl (or.inl ⟨h2, h3⟩)))
+    (λ h2, or.elim (classical.em (x ∈ A)) 
+      (λ h3, or.inl (or.inr ⟨h3, h2⟩)) 
+      (λ h3, or.inr (⟨h2, h3⟩)))))
+end
+
+-- Exercise 3.1.11. Show that the axiom of replacement implies the axiom
+-- of specification. TODO
+
+-- Axiom 3.9 (Regularity). TODO
+-- Rest of Russell's Paradox chapter - TODO
+
+section functions
+-- Lemma 3.3.12 (Composition is associative). Let f : X → Y, g : Y → Z,
+-- and h : Z → W be functions. Then f ∘ (g ∘ h) = (f ∘ g) ∘ h.
+variables {W X Y Z : Sort}
+example (f : X → Y) (g : Y → Z) (h : Z → W) : f ∘ (g ∘ h) = (f ∘ g) ∘ h := _
+
+end functions
