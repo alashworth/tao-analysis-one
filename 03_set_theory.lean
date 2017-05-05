@@ -232,16 +232,22 @@ assume h1 h2,
 
 -- Exercise 3.1.2. Using only definition 3.1.4, axiom 3.2, and axiom 3.3, prove
 -- that the sets ∅, {∅}, and {{∅}}, and {∅,{∅}} are all distinct
+theorem mem_insert (x : α) (s : set α) : x ∈ insert x s := or.inl rfl
 
-lemma mem_of_self_singleton (a : α) : a ∈ ({a} : set α) := or.inl rfl
+theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
+λ h, absurd (mem_insert a s) begin rw h, apply set.not_mem_empty end
+
+theorem mem_singleton (a : α) : a ∈ ({a} : set α) := or.inl rfl
+
+theorem singleton_ne_empty (a : α) : ({a} : set α) ≠ ∅ := insert_ne_empty _ _
 
 example : (∅ : set (set α)) ≠ {∅} :=
 assume h : ∅ = {∅},
-have ∅ ∈ ({∅} : set (set α)), from mem_of_self_singleton _,
+have ∅ ∈ ({∅} : set (set α)), from mem_singleton _,
 have ∅ ∈ (∅ : set (set α)), from eq.rec_on h^.symm this,
 absurd this (set.not_mem_empty _).
 
--- TODO: other five cases (ugh!)
+-- TODO: other five cases (figure out a way to use the simplifier to prove them!)
 
 -- Exercise 3.1.5. Let A, B be sets. Show that the three statements 
 -- A ⊆ B, A ∪ B = B, and A ∩ B = A are logically equivalent. 
@@ -400,9 +406,54 @@ end
 -- Rest of Russell's Paradox chapter - TODO
 
 section functions
+open function
+variables {W X Y Z : Type}
+
 -- Lemma 3.3.12 (Composition is associative). Let f : X → Y, g : Y → Z,
 -- and h : Z → W be functions. Then f ∘ (g ∘ h) = (f ∘ g) ∘ h.
-variables {W X Y Z : Sort}
-example (f : X → Y) (g : Y → Z) (h : Z → W) : f ∘ (g ∘ h) = (f ∘ g) ∘ h := _
+example (f : Z → W) (g : Y → Z) (h : X → Y) : f ∘ (g ∘ h) = (f ∘ g) ∘ h := rfl
 
+-- Exercise 3.3.1. Show that the definition of function equality is reflexive,
+-- symmetric, and transitive.
+section ex331
+  local infix ` ~ `:60 := function.equiv
+  -- Reflexivity
+  example (f : X → Y) : f ~ f := function.equiv.refl _
+  -- Symmetry
+  example (f g : X → Y) : f ~ g = g ~ f := 
+  propext (iff.intro (λ h x, eq.symm (h x)) (λ h x, eq.symm (h x))) 
+  -- Transivitiy
+  example (f g h : X → Y) : f ~ g → g ~ h → f ~ h := 
+  λ p₁ p₂, function.equiv.trans p₁ p₂ 
+end ex331
+
+-- Exercise 3.3.2.
+section ex332
+  variables (f : X → Y) (g : Y → Z)
+  
+  example (injf : injective f) (injg : injective g) : injective (g ∘ f) :=
+  injective_comp injg injf
+  
+  example : surjective f → surjective g → surjective (g ∘ f) := 
+  λ h₁ h₂, surjective_comp h₂ h₁ 
+end ex332
+
+-- Exercise 3.3.3. 
+-- TODO
+
+-- Exercise 3.3.4.
+example (f₁ f₂ : X → Y) (g₁ g₂ : Y → Z) (h₁ : g₁ ∘ f₁ = g₁ ∘ f₂) 
+  (hg : injective g₁) : f₁ = f₂ := 
+funext (take x, 
+  have h₂ : g₁ (f₁ x) = g₁ (f₂ x) → f₁ x = f₂ x, from @hg (f₁ x) (f₂ x), 
+  have h₃ : _, from congr_fun h₁ x,
+  h₂ (congr_fun h₁ x))
+
+example (f : X → Y) (g₁ g₂ : Y → Z) (hf : surjective f) (h₁ : g₁ ∘ f = g₂ ∘ f) 
+  : g₁ = g₂ :=
+funext (λ y, 
+  have h₂ : ∃ x : X, f x = y, from hf y, 
+  exists.elim h₂ (λ x h₃, eq.subst h₃ (
+    have h₄ : (g₁ ∘ f) x = (g₂ ∘ f) x, from sorry, 
+    h₄)))
 end functions
