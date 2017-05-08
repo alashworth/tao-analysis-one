@@ -451,9 +451,8 @@ funext (take x,
 
 example (f : X → Y) (g₁ g₂ : Y → Z) (hf : surjective f) (h₁ : g₁ ∘ f = g₂ ∘ f) 
   : g₁ = g₂ :=
-funext (λ y, 
-  have h₂ : ∃ x : X, f x = y, from hf y, 
-  exists.elim h₂ (λ x h₃, eq.subst h₃ (
-    have h₄ : (g₁ ∘ f) x = (g₂ ∘ f) x, from sorry, 
-    h₄)))
+funext (λ y, let ⟨x, h₂⟩ := hf y, h₃ := congr_fun h₁ x in by rw -h₂; exact h₃)
+
+
+
 end functions
