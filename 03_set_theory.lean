@@ -453,6 +453,60 @@ example (f : X → Y) (g₁ g₂ : Y → Z) (hf : surjective f) (h₁ : g₁ ∘
   : g₁ = g₂ :=
 funext (λ y, let ⟨x, h₂⟩ := hf y, h₃ := congr_fun h₁ x in by rw -h₂; exact h₃)
 
+-- Exercise 3.3.5
+example (f : X → Y) (g : Y → Z) (h₁ : injective (g ∘ f)) : injective f :=
+begin
+  intros x₁ x₂ h₂,
+  apply h₁,
+  unfold function.comp,
+  rw h₂,
+end
 
+example (f : X → Y) (g : Y → Z) (h₁ : surjective (g ∘ f)) : surjective g :=
+λ z,
+  have h₂ : ∃ x : X, g (f x) = z, from h₁ z,
+  exists.elim h₂ (
+    λ x (h₃ : g (f x) = z), 
+      exists.intro (f x) h₃)
+
+-- Exercise 3.3.6
+example (f : X → Y) (h₁ : bijective f) (g : Y → X) (h₂ : left_inverse g f) 
+  : ∀ x, g (f x) = x := λ x, h₂ _
+
+example (f : X → Y) (h₁ : bijective f) (g : Y → X) (h₂ : left_inverse g f) 
+  : ∀ y : Y, f (g y) = y := 
+λ y, 
+  let ⟨h₃, h₄⟩ := h₁ in 
+  have h₅ : ∃ x, f x = y, from h₄ y, 
+  exists.elim h₅ (λ x h₆, 
+    suffices f (g y) = f x, by rw [this, h₆], 
+    suffices g y = x, by rw [this], 
+    suffices g (f x) = x, by rw [-h₆, this], 
+    h₂ _)
+
+example (f : X → Y) (h₁ : bijective f) (g : Y → X) (h₂ : left_inverse g f)
+  : left_inverse f g :=
+left_inverse_of_surjective_of_right_inverse
+  (let ⟨(h₃ : injective f), (h₄ : surjective f)⟩ := h₁ in h₄)
+  (h₂)
+
+-- Exercise 3.3.7
+section ex337
+  variables 
+    (f : X → Y) 
+    (g : Y → Z) 
+    (h₁ : injective f) 
+    (h₂ : surjective f)
+    (h₃ : injective g)
+    (h₄ : surjective g)
+  
+  example : bijective (g ∘ f) := 
+  bijective_comp (and.intro h₃ h₄) (and.intro h₁ h₂)
+  
+  -- TODO : (g ∘ f)⁻¹ = f⁻¹ ∘ g⁻¹ 
+end ex337
+
+-- Exercise 3.3.8
+-- TODO
 
 end functions
