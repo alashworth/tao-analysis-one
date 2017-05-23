@@ -502,6 +502,8 @@ section ex337
   
   example : bijective (g ∘ f) := 
   bijective_comp (and.intro h₃ h₄) (and.intro h₁ h₂)
+
+  example : false := sorry
   
   -- TODO : (g ∘ f)⁻¹ = f⁻¹ ∘ g⁻¹ 
 end ex337

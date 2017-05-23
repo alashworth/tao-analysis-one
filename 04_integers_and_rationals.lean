@@ -1,25 +1,21 @@
-prelude
-
-import init.data.nat init.data.nat.lemmas
-
--- The integers are defined as a pair of natural numbers.
-local notation `ℤ` := ℕ × ℕ
-
-namespace int
+-- Definition 4.1.1 (Integers). An integer is an expression of the form 
+-- a--b, where a and b are natural numbers. Two integers are considered to be
+-- equal, a--b = c--d, iff a + d = c + b. We let Z denote the set of all 
+-- integers.
 
 -- An equivalence relation is defined on the integers.
-def eqv : ℤ → ℤ → Prop
+private def eqv : ℕ × ℕ → ℕ × ℕ → Prop
 | (a, b) (c, d) := a + d = c + b
 
 infix ` ∽ `:50 := eqv
 
-theorem eqv.refl : ∀ (a : ℤ), a ∽ a 
+private theorem eqv.refl : ∀ (a : ℕ × ℕ), a ∽ a 
 | (a, b) := rfl
 
-theorem eqv.symm : ∀ (a b : ℤ), a ∽ b → b ∽ a
+private theorem eqv.symm : ∀ (a b : ℕ × ℕ), a ∽ b → b ∽ a
 | (a, b) (c, d) := λ h₁, eq.symm h₁
 
-theorem eqv.trans : ∀ (a b c : ℤ), a ∽ b → b ∽ c → a ∽ c
+private theorem eqv.trans : ∀ (a b c : ℕ × ℕ), a ∽ b → b ∽ c → a ∽ c
 | (a, b) (c, d) (e, f) := 
 λ (h₁ : a + d = c + b) 
   (h₂ : c + f = e + d), 
@@ -37,34 +33,31 @@ show (a + f = e + b), from
     from @add_left_cancel ℕ _ (c + d) _ _ (by simp; simp at h₃; assumption), 
   h₅^.symm ▸ (add_comm b e ▸ rfl)
 
-def add : ℤ → ℤ → ℤ 
-| (a, b) (c, d) := ((a + c), (b + d))
+private theorem is_equivalence : equivalence eqv := 
+mk_equivalence (_) (eqv.refl) (eqv.symm) (eqv.trans)
 
-def mul : ℤ → ℤ → ℤ 
-| (a, b) (c, d) := ((a * c + b * d), (a * d + b * c))
+instance Z.setoid : setoid (ℕ × ℕ) := setoid.mk eqv is_equivalence
 
-def neg : ℤ → ℤ 
-| (a, b) := (b, a)
+def Z : Type := quotient (Z.setoid)
 
--- the natural numbers are isomorphic with the integers of form (a, 0)
-def nat.to_int (n : ℕ) : ℤ := (n, 0)
+private def mk (a b : ℕ) : Z := ⟦(a, b)⟧
 
-instance nat_to_int_coe : has_coe (ℕ) (ℤ) := ⟨nat.to_int⟩ 
+local notation a`—`b := mk a b
 
--- trichotomy of integers as inductive proposition
-inductive trichot (x : ℤ) : Prop 
-| zero : x = nat.zero → trichot
-| pos : (∃ (n : ℕ), x = nat.succ n) → trichot
-| neg : (∃ (n : ℕ), x = neg (nat.succ n)) → trichot 
+-- Definition 4.1.2.
+private def add_Z' : ℕ × ℕ → ℕ × ℕ → Z 
+| (a, b) (c, d) := ⟦(a + c, b + d)⟧ 
 
-theorem trichotomy_of_integers : ∀ (x : ℤ), trichot x 
-| (a, b) := 
-have h₁ : a < b ∨ a = b ∨ b < a, from nat.lt_trichotomy a b,
-or.elim h₁ 
-  (assume h₂ : a < b, 
-    trichot.neg (exists.intro (b) 
-        (suffices (a, b) = (nat.succ b, 0), from _, _))) 
-        -- (a, b) = (nat.succ b, 0)
-  (_)
+-- Lemma 4.1.3 (Addition and multiplication are well-defined).
+private lemma add_well_defined 
+  (a b a' b' c d : ℕ) 
+  (h₁ : (a—b) = (a'—b'))
+  : add_Z' (a—b) (c—d) = add_Z' (a'—b') (c—d) := _
 
-end int
+def add (x y : Z) : Z :=
+(quotient.lift_on₂ x y 
+  (λ a b, add_Z' a b) 
+  (λ n₁ n₂ n₃ n₄ h₁ h₂, add_well_defined n₁ n₂ n₃ n₄ h₁ h₂))
+
+instance Z.has_zero : has_zero Z := ⟨⟦(0, 0)⟧⟩
+instance Z.has_one : has_one Z := ⟨⟦(1, 0)⟧⟩
