@@ -1,21 +1,19 @@
--- Definition 4.1.1 (Integers). An integer is an expression of the form 
--- a--b, where a and b are natural numbers. Two integers are considered to be
--- equal, a--b = c--d, iff a + d = c + b. We let Z denote the set of all 
--- integers.
+-- Let the integers be represented as an ordered pair of natural numbers.
+def ℤ₀ := ℕ × ℕ 
 
 -- An equivalence relation is defined on the integers.
-private def eqv : ℕ × ℕ → ℕ × ℕ → Prop
+def eqv : ℤ₀ → ℤ₀ → Prop
 | (a, b) (c, d) := a + d = c + b
 
 infix ` ∽ `:50 := eqv
 
-private theorem eqv.refl : ∀ (a : ℕ × ℕ), a ∽ a 
+private theorem eqv.refl : ∀ (a : ℤ₀), a ∽ a 
 | (a, b) := rfl
 
-private theorem eqv.symm : ∀ (a b : ℕ × ℕ), a ∽ b → b ∽ a
+private theorem eqv.symm : ∀ (a b : ℤ₀), a ∽ b → b ∽ a
 | (a, b) (c, d) := λ h₁, eq.symm h₁
 
-private theorem eqv.trans : ∀ (a b c : ℕ × ℕ), a ∽ b → b ∽ c → a ∽ c
+private theorem eqv.trans : ∀ (a b c : ℤ₀), a ∽ b → b ∽ c → a ∽ c
 | (a, b) (c, d) (e, f) := 
 λ (h₁ : a + d = c + b) 
   (h₂ : c + f = e + d), 
@@ -36,28 +34,21 @@ show (a + f = e + b), from
 private theorem is_equivalence : equivalence eqv := 
 mk_equivalence (_) (eqv.refl) (eqv.symm) (eqv.trans)
 
-instance Z.setoid : setoid (ℕ × ℕ) := setoid.mk eqv is_equivalence
+instance Z.setoid : setoid ℤ₀ := setoid.mk eqv is_equivalence
 
+-- A characteristic property of eqv
+
+-- Now define the integers as a quotient of the ordered pair of naturals.
 def Z : Type := quotient (Z.setoid)
 
-private def mk (a b : ℕ) : Z := ⟦(a, b)⟧
-
-local notation a`—`b := mk a b
+namespace Z
 
 -- Definition 4.1.2.
-private def add_Z' : ℕ × ℕ → ℕ × ℕ → Z 
-| (a, b) (c, d) := ⟦(a + c, b + d)⟧ 
+def add_Z₀ : ℤ₀ → ℤ₀ → ℤ₀
+| (a, b) (c, d) := (a + c, b + d) 
 
 -- Lemma 4.1.3 (Addition and multiplication are well-defined).
-private lemma add_well_defined 
-  (a b a' b' c d : ℕ) 
-  (h₁ : (a—b) = (a'—b'))
-  : add_Z' (a—b) (c—d) = add_Z' (a'—b') (c—d) := _
 
-def add (x y : Z) : Z :=
-(quotient.lift_on₂ x y 
-  (λ a b, add_Z' a b) 
-  (λ n₁ n₂ n₃ n₄ h₁ h₂, add_well_defined n₁ n₂ n₃ n₄ h₁ h₂))
 
-instance Z.has_zero : has_zero Z := ⟨⟦(0, 0)⟧⟩
-instance Z.has_one : has_one Z := ⟨⟦(1, 0)⟧⟩
+
+end Z
