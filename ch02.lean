@@ -30,7 +30,7 @@ end
 
 -- Exercise 2.2.3. Prove Proposition 2.2.12.
 section
-variables a b c : ℕ
+variables {a b c : ℕ}
 
 example : a ≤ a := le.intro (add_zero a)
 
@@ -49,10 +49,78 @@ by rw [←h₃, h₇, add_zero]
 example : a ≤ b ↔ a + c ≤ b + c := 
 iff.intro 
     (λ h₁, 
-    let ⟨k, h₂⟩ := le.dest h₁ in 
-        _)
-    (_)
+    let ⟨d, h₂⟩ := le.dest h₁ in 
+    suffices ∃ k, a + c + k = b + c, from 
+        exists.elim this (λ k h₃, le.intro h₃), 
+    exists.intro d (by rw [←h₂, add_assoc a d c, add_comm d c, add_assoc]))
+    (λ h₁, 
+    let ⟨d, h₂⟩ := le.dest h₁ in 
+    have h₃ : a + d = b, from 
+        have h₃ : c + (a + d) = c + b, by 
+            rw [add_comm c b, add_comm c (a + d), add_assoc, add_comm d c, ←add_assoc, h₂],
+        add_left_cancel h₃,
+    le.intro h₃)
 
+-- Tao's definition 2.2.11 for less-than as a theorem
+theorem lt_iff_le_and_ne : a < b ↔ a ≤ b ∧ a ≠ b :=
+iff.intro 
+    (λ h₁,
+    and.intro 
+        (less_than_or_equal.rec_on h₁ 
+            (less_than_or_equal.step (less_than_or_equal.refl a))
+            (λ b' (ih₁ : succ a ≤ b') ih₂, 
+            less_than_or_equal.step ih₂)) 
+        (λ h₂, 
+        let ⟨k, h₃⟩ := le.dest h₁ in 
+        have h₄ : k = 0, begin
+            rw [succ_add, ←add_succ] at h₃,
+            clear _let_match,
+            subst h₂,
+            exact absurd h₁ (lt_irrefl a)
+        end,
+        begin
+            subst h₄,
+            rw [add_zero, ←h₂] at h₃,
+            have h₄ : (succ a) ≠ a, 
+                exact succ_ne_self a,
+            contradiction 
+        end)) 
+    (λ ⟨h₁, h₂⟩, 
+    let h₃ := lt_or_eq_of_le h₁ in 
+    or.elim h₃ id (λ h₄, absurd h₄ h₂))
+
+example : a < b ↔ succ a ≤ b :=
+iff.intro 
+    (λ h₁, 
+    let ⟨h₂, h₃⟩ := (iff.mp lt_iff_le_and_ne) h₁ in 
+    let h₄ := le.dest h₂ in 
+    exists.elim h₄ (λ k, 
+    nat.cases_on k 
+        (λ h₅ : a = b, absurd h₅ h₃) 
+        (λ k' h₅, 
+        have h₆ : succ a + k' = b, by rw [succ_add, ←add_succ, h₅], 
+        le.intro h₆)))
+    (λ h₁, 
+    iff.mpr lt_iff_le_and_ne (and.intro 
+        (let ⟨k, h₂⟩ := le.dest h₁ in 
+        have h₃ : a + succ k = b, by rw [add_succ, ←succ_add, h₂], 
+        le.intro h₃) 
+        (let ⟨k, h₂⟩ := le.dest h₁ in 
+        λ h₃, 
+        have h₄ : succ a ≤ a, by rw ←h₃ at h₁; exact h₁, 
+        let h₅ := not_succ_le_self a in absurd h₄ h₅)))
+        
+example : a < b ↔ ∃ d, (positive d ∧ b = a + d) := 
+iff.intro
+    (λ h₁, 
+    let ⟨h₂, h₃⟩ := lt_iff_le_and_ne.mp h₁ in 
+    let h₄ := le.dest h₂ in 
+    exists.elim h₄ (λ k, nat.cases_on k 
+        (λ h₅ : a = b, absurd h₅ h₃) 
+        (λ c h₅, exists.intro (succ c) $ and.intro 
+            (λ h₆, nat.no_confusion h₆) 
+            (_))))
+    (_)
 
 end
 -- Exercise 2.2.4. Justify the three statements marked (why?) in the proof of
