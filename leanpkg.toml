@@ -1,0 +1,8 @@
+[package]
+name = "tao-analysis-one"
+version = "0.1"
+lean_version = "master"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover/mathlib", rev = "f6bbca7100b9c5e2f3a96d9998504ba365b7d80c"}
