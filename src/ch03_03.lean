@@ -10,7 +10,7 @@ open function set
 variables {α β γ : Type}
 
 -- Exercise 3.3.1. Show that the definition of function equality is reflexive,
--- symmetric, and transitive. (verifying substitution property - skipped)
+-- symmetric, and transitive.
 section
 variables (f g : α → β)
 
@@ -64,10 +64,9 @@ example : ∀ X, surj_on f ∅ X ↔ X = ∅ :=
     (λ h₁ Y h₂, 
         have h₃ : Y ∈ ∅, by rw ←h₁; exact h₂, 
         false.elim h₃)
-
--- Therefore it follows that there is only a bijection when the codomain is 
--- empty.
 end
+-- Therefore it follows that it is bijective only between two empty sets.
+
 
 -- Exercise 3.3.4.  In this section we give some cancellation laws for 
 -- composition. Let f₁ : X → Y, f₂ : X → Y, g₁ : Y → Z, and g₂ : Y → Z be 
@@ -96,14 +95,19 @@ example (h₁ : surjective (g ∘ f)) : surjective g :=
 
 end
 
--- Exercise 3.3.6 -- Skipped 
+/- Exercise 3.3.6 Let f : X → Y be a bijective function, and let f⁻¹ : Y → X
+be its inverse. Verify the cancellation laws f⁻¹ (f(x)) = x for all x ∈ X and
+f(f −1 (y)) = y for all y ∈ Y . Conclude that f −1 is also invertible, and has f
+as its inverse (thus (f −1 ) −1 = f -/
+section 
+
+variables (A : set α) (B : set β) (f : A → B) (h₁ : bij_on f α β)
+
+end
 
 -- Exercise 3.3.7
 section 
 variables (f : α → β) (g : β → γ) 
-[h10 : has_inv (α → γ)] [h11 : has_inv (β → γ)] [h12 : has_inv (α → β)]
-
-include h10 h11 h12
 
 example : bijective f → bijective g → bijective (g ∘ f) := 
 λ ⟨h₁, h₂⟩ ⟨h₃, h₄⟩, and.intro 

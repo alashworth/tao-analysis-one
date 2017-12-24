@@ -4,7 +4,7 @@
 --  Analysis 1, Third Edition, Tao                                            
 --------------------------------------------------------------------------------
 
-import data.rat scratch
+import data.rat
 
 local infix ` ^ ` := monoid.pow
 
@@ -80,3 +80,10 @@ nat.rec_on n
     (λ k ih h₁ h₂, ih 
         (even_iff_odd_succ.mpr h₂) 
         (odd_iff_even_succ.mpr h₁))
+
+lemma odd_of_odd_mul_odd (n m : ℕ) : odd n → odd m → odd (n * m) := 
+λ ⟨a, h₁⟩ ⟨b, h₂⟩, exists.intro (2 * a * b + a + b) 
+(by simp [h₁, h₂, mul_add, add_mul, two_mul])
+
+
+
