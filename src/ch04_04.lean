@@ -81,6 +81,35 @@ nat.rec_on n
         (even_iff_odd_succ.mpr h₂) 
         (odd_iff_even_succ.mpr h₁))
 
+lemma even_xor_odd (n : ℕ) : xor (even n) (odd n) :=
+or.elim (even_or_odd n)
+    (λ h₁, or.inl $ and.intro h₁ $ λ h₂, not_even_and_odd n h₁ h₂)
+    (λ h₂, or.inr $ and.intro h₂ $ λ h₁, not_even_and_odd n h₁ h₂)
+
+lemma even_iff_mod_two_eq_zero (n : ℕ) : even n ↔ n % 2 = 0 :=
+iff.intro
+    (λ ⟨k, h⟩, show n % 2 = 0, from calc
+        n % 2 = (0 + n) % 2 : congr_arg (λ m, m % 2) (zero_add n).symm
+            ... = (0 + 2 * k) % 2 : congr_arg (λ m, (0 + m) % 2) h
+            ... = 0 : nat.add_mul_mod_self_left 0 2 k )
+    (λ h, exists.intro (n / 2)
+        (show n = 2 * (n / 2), from calc
+            n = n % 2 + 2 * (n / 2) : (nat.mod_add_div n 2).symm
+                ... = 0 + 2 * (n / 2) : congr_arg (λ m, m + 2 * (n / 2)) h
+                ... = 2 * (n / 2) : zero_add (2 * (n / 2)) ) )
+
+lemma odd_iff_mod_two_eq_one (n : ℕ) : odd n ↔ n % 2 = 1 :=
+iff.intro
+    (λ ⟨k, h⟩, show n % 2 = 1, from calc
+        n % 2 = (2 * k + 1) % 2 : congr_arg (λ m, m % 2) h
+            ... = (1 + 2 * k) % 2 : congr_arg (λ m, m % 2) (add_comm (2 * k) 1)
+            ... = 1 : nat.add_mul_mod_self_left 1 2 k )
+    (λ h, exists.intro (n / 2)
+        (show n = 2 * (n / 2) + 1, from calc
+            n = n % 2 + 2 * (n / 2) : (nat.mod_add_div n 2).symm
+                ... = 1 + 2 * (n / 2) : congr_arg (λ m, m + 2 * (n / 2)) h
+                ... = 2 * (n / 2) + 1 : add_comm 1 (2 * (n / 2)) ) )
+
 lemma odd_of_odd_mul_odd (n m : ℕ) : odd n → odd m → odd (n * m) := 
 λ ⟨a, h₁⟩ ⟨b, h₂⟩, exists.intro (2 * a * b + a + b) 
 (by simp [h₁, h₂, mul_add, add_mul, two_mul])
