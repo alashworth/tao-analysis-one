@@ -22,8 +22,6 @@ example (A B C : set α) :
   ∀ x, (x ∈ A ↔ x ∈ B) → (x ∈ B ↔ x ∈ C) → (x ∈ A ↔ x ∈ C) := 
 λ x ⟨h₁, h₂⟩ ⟨h₃, h₄⟩, ⟨λ h₅, h₃ $ h₁ h₅, λ h₅, h₂ $ h₄ h₅⟩
 
--- Exercise 3.1.2. Skipped. Type inequality is trivial in type theory.
-
 -- Exercise 3.1.3. Prove the remaining claims in Lemma 3.1.13.
 lemma eq_or_eq_of_mem_pair {a b y : α} : y ∈ ({a, b}:set α) → y = a ∨ y = b := 
 by finish  -- Tao axiom 3.3  
@@ -265,8 +263,5 @@ example (A B : set α) : (A ∩ B) ∩ (B \ A) = ∅ := ext $ λ x, iff.intro
 example (A B : set α) : (A \ B) ∩ (B \ A) = ∅ := ext $ λ x, iff.intro
 (λ ⟨⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩, h₂ h₃) 
 (λ h₁, absurd h₁ (not_mem_empty x))
-
--- Exercise 3.1.11. Show that the axiom of replacement implies the axiom of
--- specification. Skipped since we don't have set-theory axioms in type theory.
 
 end

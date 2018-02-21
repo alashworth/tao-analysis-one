@@ -7,23 +7,25 @@
 import data.set.function data.equiv
 open function set 
 
-variables {α β γ : Type}
+universes u v w z
+variables {α : Type u} {β : Type v} {γ : Type w} {ι : Type z}
 
 -- Exercise 3.3.1. Show that the definition of function equality is reflexive,
 -- symmetric, and transitive.
 section
-variables (f g : α → β)
+
+variables (f g : α → β).
 
 example : f = g ↔ ∀ x, f x = g x := 
-⟨congr_fun, funext⟩
+⟨congr_fun, funext⟩.
 
-example : ∀ x, f x = f x := λ x, rfl 
+example : ∀ x, f x = f x := λ x, rfl.
 
 example : ∀ x, f x = g x ↔ g x = f x := 
-λ x, ⟨λ h₁, eq.symm h₁, λ h₂, eq.symm h₂⟩
+λ x, ⟨λ h₁, eq.symm h₁, λ h₂, eq.symm h₂⟩.
 
 example (h : α → β) : ∀ x, f x = g x → g x = h x → f x = h x := 
-λ x h₁ h₂, eq.trans h₁ h₂ 
+λ x h₁ h₂, eq.trans h₁ h₂. 
 
 end
 
@@ -49,7 +51,7 @@ variable (f : (∅ : set α) → set α)
 example : injective f := λ x₁ _, false.elim x₁.2
 
 -- The empty function is a surjection iff the set is empty
-example : ∀ X, surj_on f ∅ X ↔ X = ∅ :=
+example : ∀ X, set.surj_on f ∅ X ↔ X = ∅ :=
 λ X, iff.intro 
     (λ h₁, ext $ λ Y, iff.intro 
         (λ h₂, 
@@ -97,11 +99,23 @@ end
 
 /- Exercise 3.3.6 Let f : X → Y be a bijective function, and let f⁻¹ : Y → X
 be its inverse. Verify the cancellation laws f⁻¹ (f(x)) = x for all x ∈ X and
-f(f −1 (y)) = y for all y ∈ Y . Conclude that f −1 is also invertible, and has f
-as its inverse (thus (f −1 ) −1 = f -/
+f(f⁻¹(y)) = y for all y ∈ Y . Conclude that f⁻¹ is also invertible, and has f
+as its inverse (thus (f⁻¹ )⁻¹ = f -/
+
+
 section 
 
-variables (A : set α) (B : set β) (f : A → B) (h₁ : bij_on f α β)
+variables (f : α → β) (g : β → α) (h₁ : bijective f) (h₂ : left_inverse g f)
+    (h₃ : right_inverse f g)
+
+example : g ∘ f = id := funext h₂
+
+example : f ∘ g = id := funext $ (let ⟨h₄, h₅⟩ := h₁ in 
+    have h₆ : left_inverse f g, 
+        from left_inverse_of_surjective_of_right_inverse h₅ h₃, 
+    λ x, h₆ x)
+
+
 
 end
 
@@ -115,10 +129,29 @@ example : bijective f → bijective g → bijective (g ∘ f) :=
     (λ x, 
         exists.elim (h₄ x) (λ y h₅, 
         exists.elim (h₂ y) (λ z h₆, ⟨z, by rw [←h₅, ←h₆]⟩))) 
-
--- second part skipped
+ 
 end
 
--- Exercise 3.3.8 skipped
+-- Exercise 3.3.8 
+section 
 
+variables {X Y Z : set α}
 
+def inclusion_map (XsubY : X ⊆ Y) : X → Y
+| ⟨x, h⟩ := ⟨x, XsubY h⟩
+
+lemma inclusion_trans 
+  (XsubY : X ⊆ Y) (YsubZ : Y ⊆ Z) (XsubZ : X ⊆ Z) :
+  (inclusion_map YsubZ) ∘ (inclusion_map XsubY) = inclusion_map (XsubZ) :=
+funext (λ ⟨x, h⟩, rfl).
+
+lemma inclusion_comp_right :
+    ∀ f : X → Y, f = f ∘ (inclusion_map $ subset.refl X) := 
+λ f, funext (λ ⟨x, h⟩, rfl)
+
+lemma inclusion_comp_left (f : X → Y) :
+  f = (inclusion_map $ subset.refl Y) ∘ f := 
+funext (λ x, match f x : ∀ y, y = inclusion_map (subset.refl Y) y
+  with ⟨y, h⟩ := rfl end)
+
+end
